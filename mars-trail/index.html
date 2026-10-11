@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sanctuary: Outfitting</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <main class="outfit">
+    <header class="outfit__header">
+      <p class="eyebrow">Jezero Base, Sol 1</p>
+      <h1>Outfit your expedition</h1>
+      <p class="lede">Sanctuary lies <span id="trip-distance"></span> km across the plains. Choose a vehicle, pick your crew and load supplies before you leave.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="vehicle-heading">
+      <h2 id="vehicle-heading">1. Vehicle</h2>
+      <div class="vehicles" id="vehicles" role="radiogroup" aria-labelledby="vehicle-heading"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="crew-heading">
+      <h2 id="crew-heading">2. Crew</h2>
+      <div class="crew">
+        <button type="button" class="stepper" id="crew-minus" aria-label="Fewer crew">&minus;</button>
+        <output id="crew-count" aria-live="polite">2</output>
+        <button type="button" class="stepper" id="crew-plus" aria-label="More crew">+</button>
+        <p class="hint" id="crew-hint"></p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="supplies-heading">
+      <h2 id="supplies-heading">3. Supplies</h2>
+      <table class="supplies">
+        <thead>
+          <tr><th>Item</th><th>Price</th><th>Mass</th><th>Quantity</th><th>Lasts</th></tr>
+        </thead>
+        <tbody id="supplies"></tbody>
+      </table>
+    </section>
+
+    <aside class="summary" aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Manifest</h2>
+      <dl>
+        <div><dt>Credits left</dt><dd id="credits"></dd></div>
+        <div><dt>Cargo</dt><dd id="cargo"></dd></div>
+        <div><dt>Est. trip</dt><dd id="trip-days"></dd></div>
+      </dl>
+      <div class="meter" aria-hidden="true"><span id="cargo-bar"></span></div>
+      <ul class="warnings" id="warnings"></ul>
+      <button type="button" class="launch" id="launch">Depart for Sanctuary</button>
+    </aside>
+
+    <dialog id="depart-dialog">
+      <h2>Expedition ready</h2>
+      <pre id="loadout"></pre>
+      <form method="dialog"><button>Back to outfitting</button></form>
+    </dialog>
+  </main>
+  <script type="module" src="src/outfitting.js"></script>
+</body>
+</html>
