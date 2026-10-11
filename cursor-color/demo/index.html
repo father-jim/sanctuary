@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cursor Color Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 18px/1.6 system-ui, sans-serif; background: #f4f1ea; color: #6b6b6b; }
+    section { min-height: 100vh; padding: 12vh 8vw; display: grid; grid-template-columns: 1fr 1fr; gap: 6vw; align-items: center; }
+    h1, h2 { margin: 0 0 .4em; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.05; color: inherit; }
+    img { width: 100%; height: auto; display: block; border-radius: 6px; }
+    .hint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); font-size: 13px; opacity: .7; }
+  </style>
+</head>
+<body>
+  <!-- Light section, grey text -->
+  <section data-bg="#f4f1ea" data-fg="#6b6b6b">
+    <div><h1>Forest study</h1><p>Grey body text on an off-white background. Move the cursor to the right and both shift toward green, keeping the same contrast.</p></div>
+    <img src="forest.png" alt="">
+  </section>
+
+  <!-- Dark section, light text -->
+  <section data-bg="#1c1c1e" data-fg="#e8e6e1">
+    <div><h2>Ember series</h2><p>A dark section. The right side keeps it dark and tints it with the image's orange.</p></div>
+    <img src="ember.png" alt="">
+  </section>
+
+  <!-- No image here, so a fixed accent is used -->
+  <section data-bg="#e9ecef" data-fg="#2b2f36" data-accent="#3a5bd9">
+    <div><h2>Contact</h2><p>This section has no image, so it uses <code>data-accent</code> instead.</p></div>
+    <div></div>
+  </section>
+
+  <div class="hint">Move the cursor from left to right</div>
+  <script src="../cursor-color.js"></script>
+</body>
+</html>
