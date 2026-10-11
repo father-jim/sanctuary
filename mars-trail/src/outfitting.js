@@ -89,9 +89,18 @@ $('supplies').addEventListener('input', (e) => {
 });
 $('launch').addEventListener('click', () => {
   const loadout = { ...state, supplies: { ...state.supplies } };
-  try { localStorage.setItem('sanctuary.loadout', JSON.stringify(loadout)); } catch {}
-  $('loadout').textContent = JSON.stringify(loadout, null, 2);
+  try {
+    localStorage.setItem('sanctuary.loadout', JSON.stringify(loadout));
+    localStorage.removeItem('sanctuary.run'); // a new loadout starts a new journey
+  } catch {}
+  const r = evaluate(state);
+  $('loadout').textContent = `The ${r.vehicle.name} is loaded with ${state.crew} crew and ${r.cargo.toLocaleString()} kg of cargo, with ${r.credits.toLocaleString()} credits to spend on the way.`;
   $('depart-dialog').showModal();
 });
+
+try {
+  const saved = JSON.parse(localStorage.getItem('sanctuary.run'));
+  $('resume').hidden = !saved || Boolean(saved.over);
+} catch {}
 
 update();

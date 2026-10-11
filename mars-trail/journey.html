@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sanctuary: The Journey</title>
+  <link rel="stylesheet" href="src/style.css">
+  <link rel="stylesheet" href="src/journey.css">
+</head>
+<body>
+  <main class="journey">
+    <header class="journey__header">
+      <p class="eyebrow" id="where"></p>
+      <h1 id="headline"></h1>
+      <div class="track" id="track" aria-hidden="true"></div>
+    </header>
+
+    <section class="panel" aria-labelledby="crew-heading">
+      <h2 id="crew-heading">Crew</h2>
+      <ul class="crewlist" id="crew"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="supplies-heading">
+      <h2 id="supplies-heading">Supplies</h2>
+      <table class="supplies stock">
+        <thead><tr><th>Item</th><th>Left</th><th>Lasts</th></tr></thead>
+        <tbody id="stock"></tbody>
+      </table>
+      <div class="gauges">
+        <div><span>Rover condition</span><span id="rover-label"></span><div class="meter"><span id="rover-bar"></span></div></div>
+        <div><span>Morale</span><span id="morale-label"></span><div class="meter"><span id="morale-bar"></span></div></div>
+      </div>
+    </section>
+
+    <section class="panel log-panel" aria-labelledby="log-heading">
+      <h2 id="log-heading">Log</h2>
+      <ol class="log" id="log" aria-live="polite"></ol>
+    </section>
+
+    <aside class="summary controls" aria-label="Orders">
+      <fieldset>
+        <legend>Pace</legend>
+        <div class="segmented" id="pace"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Rations</legend>
+        <div class="segmented" id="rations"></div>
+      </fieldset>
+      <dl>
+        <div><dt>Credits</dt><dd id="credits"></dd></div>
+        <div><dt>Next stop</dt><dd id="next-stop"></dd></div>
+      </dl>
+      <button type="button" class="launch" id="drive">Drive on</button>
+      <button type="button" class="secondary" id="auto">Keep driving</button>
+      <div class="row">
+        <button type="button" class="secondary" id="rest">Rest a sol</button>
+        <button type="button" class="secondary" id="drill">Drill for ice</button>
+      </div>
+      <p class="hint" id="order-hint"></p>
+    </aside>
+
+    <dialog id="event-dialog" aria-labelledby="event-title">
+      <h2 id="event-title"></h2>
+      <p id="event-text"></p>
+      <div class="choices" id="event-choices"></div>
+      <div class="minigame" id="minigame"></div>
+    </dialog>
+
+    <dialog id="waypoint-dialog" aria-labelledby="waypoint-title">
+      <h2 id="waypoint-title"></h2>
+      <p id="waypoint-text" class="lede"></p>
+      <div id="shop"></div>
+      <div class="choices" id="waypoint-actions"></div>
+    </dialog>
+
+    <dialog id="end-dialog" aria-labelledby="end-title">
+      <p class="eyebrow" id="end-eyebrow"></p>
+      <h2 id="end-title"></h2>
+      <p id="end-reason"></p>
+      <ul class="obits" id="end-crew"></ul>
+      <dl class="score" id="end-score"></dl>
+      <a class="launch" href="index.html" id="new-run">Plan a new expedition</a>
+    </dialog>
+  </main>
+  <script type="module" src="src/journey.js"></script>
+</body>
+</html>
