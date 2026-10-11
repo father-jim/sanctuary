@@ -1,0 +1,135 @@
+/* Journey screen. Builds on style.css's tokens, panels, meters and buttons. */
+:root { --good: #7bd88f; }
+
+.journey {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+.journey__header { grid-column: 1 / -1; }
+.journey .panel { grid-column: auto; }
+.journey .log-panel { grid-column: 1 / 3; }
+.controls { grid-column: 3; grid-row: 2 / span 2; position: sticky; top: 16px; }
+
+/* Route map */
+.track { position: relative; height: 64px; margin: 20px 8px 0; }
+.track__line { position: absolute; top: 14px; left: 0; right: 0; height: 4px; background: var(--line); border-radius: 2px; }
+.track__line span { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+.track__stop {
+  position: absolute; top: 9px; width: 14px; height: 14px; margin-left: -7px;
+  border-radius: 50%; background: var(--bg); border: 2px solid var(--line);
+}
+.track__stop.passed { border-color: var(--accent); background: var(--accent); }
+.track__label {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 12px; color: var(--muted);
+}
+.track__stop:first-of-type .track__label { left: 0; transform: none; }
+.track__stop:last-of-type .track__label { left: auto; right: 0; transform: none; color: var(--text); font-weight: 600; }
+.track__rover {
+  position: absolute; top: 2px; width: 26px; height: 16px; margin-left: -13px;
+  background: var(--text); border-radius: 5px 5px 2px 2px; transition: left .3s;
+  box-shadow: 0 0 0 3px var(--bg);
+}
+.track__rover::before, .track__rover::after {
+  content: ''; position: absolute; bottom: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+}
+.track__rover::before { left: 2px; }
+.track__rover::after { right: 2px; }
+
+/* Crew */
+.crewlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.crewlist__name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.tag.sick { color: var(--warn); border-color: var(--warn); }
+.crewlist .dead strong { text-decoration: line-through; color: var(--muted); }
+.death { margin: 0; font-size: 14px; color: var(--bad); }
+.meter.health { margin: 0; }
+.meter.health span { background: var(--good); }
+.meter.health.low span { background: var(--bad); }
+
+/* Supplies */
+.stock td, .stock th { padding: 6px; }
+.gauges { display: grid; gap: 10px; margin-top: 16px; font-size: 14px; }
+.gauges > div { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
+.gauges > div > span:first-child { color: var(--muted); }
+.gauges .meter { grid-column: 1 / -1; margin: 0; }
+
+/* Log */
+.log { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; font-size: 15px; }
+.log li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.log li:first-child { color: var(--text); font-weight: 500; }
+.log li.bad { color: var(--bad); }
+.log li.good { color: var(--good); }
+.log__sol { display: inline-block; min-width: 52px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Orders */
+.controls fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+.controls legend { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.segmented { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.segmented input { position: absolute; opacity: 0; }
+.segmented span { display: block; padding: 8px 4px; text-align: center; font-size: 14px; cursor: pointer; }
+.segmented label + label span { border-left: 1px solid var(--line); }
+.segmented input:checked + span { background: var(--accent); color: var(--bg); font-weight: 600; }
+.segmented input:focus-visible + span { outline: 2px solid var(--text); outline-offset: -2px; }
+.controls .launch { margin-bottom: 8px; }
+.controls .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.controls .hint { margin-top: 12px; }
+.secondary, .choices button, .buy button {
+  width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: transparent; color: var(--text); font: 500 15px system-ui, sans-serif; cursor: pointer;
+}
+.secondary:hover:not(:disabled), .choices button:hover:not(:disabled), .buy button:hover { border-color: var(--accent); }
+.secondary:disabled, .choices button:disabled { opacity: .45; cursor: not-allowed; }
+a.launch { display: block; text-align: center; text-decoration: none; }
+
+/* Dialogs */
+dialog { width: min(480px, calc(100vw - 32px)); padding: 24px; }
+dialog h2 { font-size: 22px; }
+.choices { display: grid; gap: 8px; margin-top: 16px; }
+.choices button { text-align: left; }
+.choices button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; text-align: center; }
+.badge { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-left: 6px; }
+.why { display: block; font-size: 13px; color: var(--muted); }
+.mg-help { color: var(--muted); font-size: 14px; margin: 0 0 8px; }
+.mg-canvas { display: block; width: 100%; border-radius: 8px; border: 1px solid var(--line); touch-action: manipulation; cursor: crosshair; }
+.mg-canvas:focus { outline: none; }
+.mg-status { min-height: 1.5em; margin: 8px 0 0; font-weight: 600; }
+
+.shop th, .shop td { padding: 6px 4px; }
+.buy { display: flex; gap: 4px; }
+.buy button { width: auto; padding: 4px 10px; font-size: 14px; }
+.shop__totals { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 12px 0 0; font-size: 14px; }
+.shop__totals div { display: flex; gap: 6px; }
+.shop__totals dt { color: var(--muted); }
+.shop__totals dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.obits { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 6px; font-size: 15px; }
+.obits .good { color: var(--good); }
+.obits .bad { color: var(--bad); }
+.score { margin: 0 0 16px; }
+.score div { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.score dt { color: var(--muted); }
+.score dd { margin: 0; font-variant-numeric: tabular-nums; }
+.score .total { font-size: 20px; font-weight: 700; border: 0; padding-top: 8px; }
+.score .total dt { color: var(--text); }
+
+@media (max-width: 900px) {
+  .journey { grid-template-columns: 1fr 1fr; }
+  .controls { grid-column: 1 / -1; grid-row: auto; position: static; order: -1; }
+  .journey__header { order: -2; }
+  .journey .log-panel { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .journey { grid-template-columns: 1fr; padding-top: 20px; }
+  h1 { font-size: 26px; }
+  .track__stop:not(:first-of-type):not(:last-of-type) .track__label { display: none; }
+}
+@media (max-width: 800px) {
+  /* style.css hides the outfitting table's third column on phones; here it's the column that matters. */
+  .journey .supplies thead th:nth-child(3), .journey .supplies td:nth-child(3) { display: table-cell; }
+}

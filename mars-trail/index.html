@@ -11,6 +11,7 @@
     <header class="outfit__header">
       <p class="eyebrow">Jezero Base, Sol 1</p>
       <h1>Outfit your expedition</h1>
+      <p class="resume" id="resume" hidden>An expedition is already on the road. <a href="journey.html">Resume it</a> or outfit a new one.</p>
       <p class="lede">Sanctuary lies <span id="trip-distance"></span> km across the plains. Choose a vehicle, pick your crew and load supplies before you leave.</p>
     </header>
 
@@ -53,7 +54,8 @@
 
     <dialog id="depart-dialog">
       <h2>Expedition ready</h2>
-      <pre id="loadout"></pre>
+      <p id="loadout"></p>
+      <a class="launch" href="journey.html">Begin the journey</a>
       <form method="dialog"><button>Back to outfitting</button></form>
     </dialog>
   </main>

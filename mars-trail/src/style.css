@@ -100,6 +100,9 @@ h2 { margin: 0 0 12px; font-size: 18px; }
 dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; max-width: 420px; }
 dialog::backdrop { background: rgb(0 0 0 / .6); }
 dialog pre { background: var(--bg); padding: 12px; border-radius: 6px; font-size: 13px; overflow: auto; }
+dialog .launch { display: block; margin: 12px 0 8px; text-align: center; text-decoration: none; }
+.resume { margin: 8px 0; color: var(--warn); }
+.resume a { color: var(--accent); }
 dialog button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
 
 @media (max-width: 800px) {

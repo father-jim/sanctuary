@@ -3,6 +3,7 @@
 export const STARTING_CREDITS = 15000;
 export const TRIP_DISTANCE_KM = 1800;
 
+// scoreMultiplier doubles as difficulty: the cramped Rover pays best, the roomy Hauler least.
 export const VEHICLES = [
   {
     id: 'rover',
@@ -13,6 +14,7 @@ export const VEHICLES = [
     cargoKg: 900,
     speedKmPerSol: 90,
     fuelPerSol: 1,
+    scoreMultiplier: 3,
   },
   {
     id: 'hauler',
@@ -23,6 +25,7 @@ export const VEHICLES = [
     cargoKg: 2600,
     speedKmPerSol: 60,
     fuelPerSol: 2,
+    scoreMultiplier: 1,
   },
   {
     id: 'skimmer',
@@ -33,6 +36,7 @@ export const VEHICLES = [
     cargoKg: 1400,
     speedKmPerSol: 150,
     fuelPerSol: 3,
+    scoreMultiplier: 2,
   },
 ];
 
