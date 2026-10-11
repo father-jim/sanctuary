@@ -1,0 +1,1299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mars Trail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Silkscreen:wght@400;700&family=VT323&display=swap">
+<style>
+/* Layout: one console column, a mission-control CRT bezel around a single screen that swaps scenes. */
+:root {
+  --void: #110e1d;      /* night sky behind the console */
+  --panel: #1b1630;     /* screen glass */
+  --line: #3b3158;      /* bezel rules */
+  --phos: #f2c46d;      /* amber phosphor text */
+  --dim: #a99a7a;       /* secondary text */
+  --mars: #e4582d;      /* rust accent */
+  --ice: #7fd3dd;       /* telemetry cyan */
+  --ok: #95d67c;
+  --bad: #ff6b5a;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-readout: "VT323", "Courier New", monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--phos);
+  font: 15px/1.55 var(--font-body);
+  padding-inline: 16px;
+}
+#app { max-width: 920px; margin: 0 auto; padding-block: 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.logo { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.08em; color: var(--mars); }
+.bar-right { display: flex; gap: 10px; align-items: center; color: var(--dim); font-size: 13px; }
+#screen { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 22px; position: relative; min-height: 420px; box-shadow: inset 0 0 60px rgba(0,0,0,0.45); }
+#screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 6px;
+  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px); }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(36px, 8vw, 64px); color: var(--mars); letter-spacing: 0.04em; }
+h2 { font-size: 22px; color: var(--phos); }
+h3 { font-size: 16px; color: var(--ice); }
+p { margin: 0; max-width: 68ch; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.muted { color: var(--dim); }
+.small { font-size: 13px; }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--dim); }
+.btn { font: 600 14px var(--font-body); color: var(--phos); background: transparent; border: 1px solid var(--phos); border-radius: 3px; padding: 9px 14px; cursor: pointer; }
+.btn:hover:not(:disabled) { background: rgba(242,196,109,0.12); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, .pick:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+.btn.primary { background: var(--phos); color: var(--void); }
+.btn.primary:hover:not(:disabled) { background: #ffd88c; }
+.btn.danger { border-color: var(--mars); color: var(--mars); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn.tiny { padding: 4px 9px; font-size: 13px; }
+.btn.on { background: var(--ice); color: var(--void); border-color: var(--ice); }
+input[type=text], select { font: 15px var(--font-body); background: var(--void); color: var(--phos); border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; }
+input[type=text] { width: 100%; box-sizing: border-box; }
+.picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.pick { text-align: left; font: inherit; color: inherit; background: var(--void); border: 1px solid var(--line); border-radius: 4px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+.pick:hover:not(:disabled) { border-color: var(--phos); }
+.pick.sel { border-color: var(--ice); box-shadow: 0 0 0 1px var(--ice); }
+.pick:disabled { opacity: 0.4; cursor: not-allowed; }
+.pick .name { font-family: var(--font-display); font-size: 15px; color: var(--phos); }
+.spec { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; }
+.spec dt { color: var(--dim); } .spec dd { margin: 0; font-variant-numeric: tabular-nums; }
+.readout { font-family: var(--font-readout); font-size: 26px; line-height: 1; color: var(--ice); font-variant-numeric: tabular-nums; }
+.good { color: var(--ok); } .warn { color: var(--phos); } .bad { color: var(--bad); }
+
+/* title */
+.title { display: flex; flex-direction: column; gap: 18px; }
+.title canvas { width: 100%; height: auto; max-width: 100%; border-radius: 4px; background: #07060d; }
+.lede { font-size: 16px; }
+
+/* store */
+.store { width: 100%; border-collapse: collapse; font-size: 14px; }
+.store th { text-align: left; font-weight: 400; } .store td, .store th { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.store td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qty { display: inline-flex; align-items: center; gap: 6px; }
+.qty span { min-width: 2.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; }
+.meter { height: 8px; background: var(--void); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.meter > i { display: block; height: 100%; background: var(--ice); }
+.meter.hot > i { background: var(--mars); }
+.advisor { border-left: 3px solid var(--ice); padding: 8px 12px; background: rgba(127,211,221,0.06); font-size: 13px; }
+
+/* weather board */
+.wx { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.wx-cell { border: 1px solid var(--line); background: var(--void); padding: 12px; border-radius: 4px; display: flex; flex-direction: column; gap: 6px; }
+.wx-cell.fail { border-color: var(--bad); }
+.wx-cell .lim { font-size: 12px; color: var(--dim); }
+.countdown { font-family: var(--font-readout); font-size: clamp(64px, 18vw, 120px); line-height: 1; color: var(--phos); text-align: center; font-variant-numeric: tabular-nums; }
+.launch-btn { font: 700 20px var(--font-display); background: var(--mars); color: #fff; border: 4px solid #8f2e12; border-radius: 50%; width: 150px; height: 150px; cursor: pointer; align-self: center; box-shadow: 0 6px 0 #6b210c; }
+.launch-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #6b210c; }
+.launch-btn:disabled { filter: grayscale(0.7); cursor: not-allowed; }
+
+/* journey */
+.journey { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 720px) { .journey { grid-template-columns: minmax(0, 1fr); } }
+.track { position: relative; height: 54px; border: 1px dashed var(--line); border-radius: 30px; margin-inline: 10px; }
+.track .planet { position: absolute; top: 50%; width: 30px; height: 30px; border-radius: 50%; transform: translate(-50%, -50%); }
+.track .earth { left: 0; background: radial-gradient(circle at 35% 35%, #9fe0ff, #2b6cb0 60%, #123a6b); }
+.track .mars { left: 100%; background: radial-gradient(circle at 35% 35%, #ffb08a, #c4471f 60%, #6d2410); }
+.track .ship { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 14px solid var(--phos); border-top: 7px solid transparent; border-bottom: 7px solid transparent; transition: left 0.18s linear; }
+.log { height: 260px; overflow-y: auto; border: 1px solid var(--line); background: var(--void); padding: 10px 12px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.log .d { color: var(--dim); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.log .e-bad { color: var(--bad); } .log .e-good { color: var(--ok); } .log .e-note { color: var(--ice); }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; align-items: center; }
+.stats dt { color: var(--dim); } .stats dd { margin: 0; font-variant-numeric: tabular-nums; }
+.crew { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.crew-row { display: grid; grid-template-columns: minmax(0, 1fr) 80px 70px; gap: 8px; align-items: center; }
+.crew-row.dead { color: var(--dim); text-decoration: line-through; }
+.crew-row .tag { font-size: 11px; text-align: right; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-top: 1px solid var(--line); padding-top: 14px; }
+.controls label { font-size: 13px; color: var(--dim); display: inline-flex; gap: 6px; align-items: center; }
+#event { position: absolute; inset: 0; background: rgba(10,8,18,0.88); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 5; border-radius: 6px; }
+.event-box { max-width: 560px; width: 100%; background: var(--panel); border: 1px solid var(--phos); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.event-box .choices { display: flex; flex-direction: column; gap: 8px; }
+.event-box .choices .btn { text-align: left; }
+
+/* mini-games */
+.mg { display: flex; flex-direction: column; gap: 14px; }
+.cv-wrap { position: relative; }
+.cv-wrap canvas { display: block; width: 100%; height: auto; max-width: 100%; background: #07060d; border: 1px solid var(--line); border-radius: 4px; touch-action: none; }
+.cv-hud { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: var(--font-readout); font-size: 22px; color: var(--ice); pointer-events: none; gap: 10px; flex-wrap: wrap; }
+.pad-ctrl { display: none; gap: 10px; justify-content: center; }
+.pad-ctrl .btn { min-width: 70px; min-height: 52px; font-size: 20px; user-select: none; -webkit-user-select: none; touch-action: none; }
+@media (pointer: coarse) { .pad-ctrl { display: flex; } }
+
+/* base */
+.modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.mod { border: 1px solid var(--line); background: var(--void); padding: 10px; border-radius: 4px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.mod .cnt { font-family: var(--font-readout); font-size: 28px; color: var(--ice); line-height: 1; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.task { text-align: left; font: 13px var(--font-body); color: var(--phos); background: var(--void); border: 1px solid var(--line); border-radius: 4px; padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
+.task b { font-weight: 600; }
+.task .muted { font-size: 12px; }
+.task.sel { border-color: var(--ice); box-shadow: 0 0 0 1px var(--ice); }
+.task:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.tomb { align-self: center; text-align: center; border: 2px solid var(--dim); border-radius: 120px 120px 6px 6px; padding: 50px 30px 30px; max-width: 360px; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; background: var(--void); }
+.tomb .rip { font-family: var(--font-display); font-size: 28px; color: var(--dim); }
+.fame { width: 100%; border-collapse: collapse; font-size: 14px; }
+.fame td, .fame th { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.fame td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.score { font-family: var(--font-readout); font-size: 56px; color: var(--phos); line-height: 1; }
+@media (prefers-reduced-motion: reduce) { .track .ship { transition: none; } }
+@media (max-width: 480px) { #screen { padding: 16px; } .crew-row { grid-template-columns: minmax(0, 1fr) 60px 60px; } }
+</style>
+</head>
+<body>
+<main id="app">
+  <header class="bar">
+    <span class="logo">MARS TRAIL</span>
+    <div class="bar-right"><span id="mission-clock"></span><button class="btn tiny" id="b-sound" type="button" aria-pressed="true">Sound on</button></div>
+  </header>
+  <section id="screen" aria-live="polite"></section>
+</main>
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const screenEl = $('#screen');
+const rand = (a, b) => a + Math.random() * (b - a);
+const ri = (a, b) => Math.floor(rand(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const chance = p => Math.random() < p;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const render = html => { screenEl.innerHTML = html; screenEl.scrollIntoView({ block: 'nearest' }); };
+
+/* ---------- sound ---------- */
+let actx = null, soundOn = true;
+function beep(f = 440, d = 0.08, type = 'square', vol = 0.035) {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = type; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.start(t); o.stop(t + d + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
+$('#b-sound').onclick = () => {
+  soundOn = !soundOn;
+  $('#b-sound').textContent = soundOn ? 'Sound on' : 'Sound off';
+  $('#b-sound').setAttribute('aria-pressed', String(soundOn));
+};
+
+/* ---------- loops & input ---------- */
+let rafId = null, tickTimer = null, keyHandler = null;
+const KEYS = {};
+function stopLoops() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  clearInterval(tickTimer); tickTimer = null;
+  keyHandler = null;
+}
+addEventListener('keydown', e => {
+  KEYS[e.key.toLowerCase()] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase()) && keyHandler !== null) e.preventDefault();
+  if (keyHandler && !e.repeat) keyHandler(e);
+});
+addEventListener('keyup', e => { KEYS[e.key.toLowerCase()] = false; });
+const keyDown = (...ks) => ks.some(k => KEYS[k]);
+
+/* ---------- game data ---------- */
+const BACKGROUNDS = [
+  { id: 'bill', name: 'Tech billionaire', money: 2400, mult: 1, perk: 'Deep pockets. Everything else you learn on the job.' },
+  { id: 'doc', name: 'Flight surgeon', money: 1500, mult: 2, perk: 'Medkits heal twice as much and your crew gets sick less often.' },
+  { id: 'eng', name: 'Systems engineer', money: 1150, mult: 3, perk: 'Spare parts repair 50% more and course corrections burn less propellant.' },
+];
+const SHIPS = [
+  { id: 'kestrel', name: 'Kestrel capsule', cost: 300, cargo: 35, hull: 70, days: 240, seats: 4, blurb: 'Cramped and cheap. Thin skin, slow transfer orbit.' },
+  { id: 'ares', name: 'Ares freighter', cost: 550, cargo: 60, hull: 100, days: 210, seats: 6, blurb: 'The workhorse. Room for a full crew and a respectable base.' },
+  { id: 'star', name: 'Starhopper Heavy', cost: 900, cargo: 100, hull: 130, days: 180, seats: 6, blurb: 'Huge hold, thick hull, fast trajectory. Priced to match.' },
+];
+const ITEMS = [
+  { k: 'food', name: 'Food crate', unit: '60 crew-days', per: 60, cost: 4, mass: 0.3 },
+  { k: 'water', name: 'Water tank', unit: '90 crew-days', per: 90, cost: 3, mass: 0.4 },
+  { k: 'o2', name: 'O₂ canister', unit: '90 crew-days', per: 90, cost: 4, mass: 0.3 },
+  { k: 'fuel', name: 'Propellant pod', unit: 'course burns & landing', per: 1, cost: 12, mass: 1.5 },
+  { k: 'parts', name: 'Spare parts kit', unit: 'repairs', per: 1, cost: 8, mass: 0.3 },
+  { k: 'med', name: 'Medkit', unit: 'treats one crew member', per: 1, cost: 5, mass: 0.1 },
+  { k: 'kits', name: 'Hab module kit', unit: 'builds your base', per: 1, cost: 30, mass: 3 },
+];
+const CREW_COST = 40;
+const SURFACE_SOLS = 150;
+const TOTAL_KM = 225; // million km
+const NAMES = ['Ada', 'Yuri', 'Mae', 'Neil', 'Sally', 'Chen', 'Valentina', 'Kalpana', 'Guion', 'Thomas', 'Peggy', 'Sunita'];
+const RATIONS = { full: { label: 'Full', rate: 1, heal: 0.4 }, meager: { label: 'Meager', rate: 0.66, heal: -0.15 }, bare: { label: 'Bare bones', rate: 0.4, heal: -0.7 } };
+const MODULES = {
+  hab: { name: 'Habitat dome', kits: 2, parts: 1, power: 0, desc: 'Pressurized living space. Without it the crew sleeps in the lander and soaks up radiation.' },
+  solar: { name: 'Solar array', kits: 1, parts: 0, power: -12, desc: '+12 kW. Dust storms cut output.' },
+  greenhouse: { name: 'Greenhouse', kits: 1, parts: 1, power: 5, desc: '+3 crew-days of food per sol. Needs 5 kW.' },
+  ice: { name: 'Ice extractor', kits: 1, parts: 0, power: 5, desc: '+6 crew-days of water per sol. Needs 5 kW.' },
+  ox: { name: 'Oxygenator', kits: 1, parts: 0, power: 5, desc: '+6 crew-days of O₂ per sol. Needs 5 kW.' },
+};
+
+let G = null;
+function newGame() {
+  G = {
+    leader: '', bg: null, ship: null, crew: [], money: 0,
+    buy: { food: 0, water: 0, o2: 0, fuel: 0, parts: 0, med: 0, kits: 0 },
+    s: { food: 0, water: 0, o2: 0, fuel: 0, parts: 0, med: 0, kits: 0 },
+    hull: 0, hullMax: 0, day: 0, progress: 0, delay: 0, pace: 'cruise', rations: 'full', morale: 70,
+    flags: {}, log: [], cat: false, lastEvent: 0, phase: 'setup',
+    base: null, bonus: 0,
+  };
+}
+const alive = () => G.crew.filter(c => c.alive);
+const bgIs = id => G.bg && G.bg.id === id;
+function hurt(p, amt, cause) { if (!p.alive) return; p.health = clamp(p.health - amt, 0, 100); if (amt > 0) p.cause = cause; }
+function heal(p, amt) { if (p.alive) p.health = clamp(p.health + amt, 0, 100); }
+function log(msg, cls = '') {
+  const when = G.base ? `Sol ${G.base.sol}` : `Day ${G.day}`;
+  G.log.push({ when, msg, cls });
+  if (G.log.length > 200) G.log.shift();
+  const el = $('#log');
+  if (el) { el.insertAdjacentHTML('beforeend', logLine(G.log[G.log.length - 1])); el.scrollTop = el.scrollHeight; }
+}
+const logLine = l => `<div class="${l.cls ? 'e-' + l.cls : ''}"><span class="d">${esc(l.when)}</span>${l.msg}</div>`;
+function setClock(t) { $('#mission-clock').textContent = t || ''; }
+
+/* ---------- title ---------- */
+function titleScreen() {
+  stopLoops(); setClock('');
+  render(`
+  <div class="title">
+    <canvas id="title-cv" width="880" height="260" aria-hidden="true"></canvas>
+    <h1>Mars Trail</h1>
+    <p class="lede">It is 2041. The Earth&ndash;Mars launch window opens in five days, and you have bought a seat on the frontier. Pick a ship, a crew and a cargo hold of supplies. Get through launch, the debris field and 225 million kilometres of nothing. Then land, build a base and keep everyone breathing for ${SURFACE_SOLS} sols until the second wave of colonists arrives.</p>
+    <div class="row">
+      <button class="btn primary" id="b-new" type="button">Begin mission</button>
+      <button class="btn" id="b-how" type="button">How to play</button>
+      <button class="btn" id="b-fame" type="button">Hall of fame</button>
+    </div>
+  </div>`);
+  $('#b-new').onclick = () => { beep(660); newGame(); backgroundScreen(); };
+  $('#b-how').onclick = howScreen;
+  $('#b-fame').onclick = fameScreen;
+  drawTitle();
+}
+function drawTitle() {
+  const cv = $('#title-cv'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  const stars = Array.from({ length: 140 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: Math.random() * 1.6 + 0.3 }));
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let t = 0;
+  const frame = () => {
+    t += 1 / 60;
+    ctx.fillStyle = '#07060d'; ctx.fillRect(0, 0, W, H);
+    for (const s of stars) { ctx.fillStyle = `rgba(255,240,210,${0.4 + 0.4 * Math.sin(t * 2 + s.x)})`; ctx.fillRect(s.x, s.y, s.s, s.s); }
+    // Earth, small, left
+    let g = ctx.createRadialGradient(80, 200, 4, 90, 210, 46);
+    g.addColorStop(0, '#9fe0ff'); g.addColorStop(0.6, '#2b6cb0'); g.addColorStop(1, '#0e2a4f');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(90, 210, 44, 0, Math.PI * 2); ctx.fill();
+    // Mars, big, right
+    g = ctx.createRadialGradient(W - 210, 90, 20, W - 170, 140, 150);
+    g.addColorStop(0, '#ffb994'); g.addColorStop(0.55, '#c4471f'); g.addColorStop(1, '#3f1307');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W - 170, 140, 130, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(80,20,8,0.35)';
+    [[-40, -30, 26], [30, 20, 18], [-10, 50, 34], [50, -50, 12]].forEach(([dx, dy, r]) => { ctx.beginPath(); ctx.ellipse(W - 170 + dx, 140 + dy, r, r * 0.6, 0.3, 0, Math.PI * 2); ctx.fill(); });
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.beginPath(); ctx.ellipse(W - 175, 18, 34, 9, 0, 0, Math.PI * 2); ctx.fill();
+    // transfer arc + ship
+    ctx.setLineDash([4, 8]); ctx.strokeStyle = 'rgba(242,196,109,0.5)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(130, 190); ctx.quadraticCurveTo(W / 2, -40, W - 300, 130); ctx.stroke(); ctx.setLineDash([]);
+    const p = (t * 0.08) % 1, q = 1 - p;
+    const x = q * q * 130 + 2 * q * p * (W / 2) + p * p * (W - 300), y = q * q * 190 + 2 * q * p * -40 + p * p * 130;
+    const dx = 2 * q * (W / 2 - 130) + 2 * p * (W - 300 - W / 2), dy = 2 * q * (-40 - 190) + 2 * p * (130 + 40);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
+    ctx.fillStyle = '#f2c46d'; ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-7, -5); ctx.lineTo(-7, 5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = `rgba(255,120,60,${0.5 + 0.5 * Math.random()})`; ctx.fillRect(-12, -2, 5, 4);
+    ctx.restore();
+    if (!still && $('#title-cv') === cv) rafId = requestAnimationFrame(frame);
+  };
+  frame();
+}
+function howScreen() {
+  render(`
+  <div class="stack">
+    <h2>How to play</h2>
+    <p><b>Outfit.</b> Your background sets your budget and your score multiplier. Pick a ship, name up to five crew and stock the hold. Everything costs money and cargo mass.</p>
+    <p><b>Launch.</b> Read the weather board. Launch only when every reading is inside its limit, then press the launch button at T&minus;0 exactly.</p>
+    <p><b>Ascent.</b> Steer through orbital traffic with the arrow keys or WASD, or drag on the screen. Every hit costs hull.</p>
+    <p><b>Cruise.</b> Days tick past on their own. Set your pace and rations, repair the hull, treat the sick and decide what to do about whatever comes over the radio.</p>
+    <p><b>Landing.</b> Up arrow fires the engine, left and right tilt the lander. Touch down on the pad, slow and upright. Every propellant pod buys you burn time.</p>
+    <p><b>Survive.</b> On Mars each turn is 10 sols. Assign your crew to build modules, explore, repair or rest. Four or more crew can take on two jobs per turn. Last ${SURFACE_SOLS} sols to win.</p>
+    <div class="row"><button class="btn primary" id="b-back" type="button">Back</button></div>
+  </div>`);
+  $('#b-back').onclick = titleScreen;
+}
+function loadFame() { try { return JSON.parse(localStorage.getItem('mars-trail-fame') || '[]'); } catch (e) { return []; } }
+function saveFame(list) { try { localStorage.setItem('mars-trail-fame', JSON.stringify(list)); } catch (e) { /* storage blocked */ } }
+function fameScreen() {
+  const list = loadFame();
+  render(`
+  <div class="stack">
+    <h2>Hall of fame</h2>
+    ${list.length ? `<div class="table-wrap"><table class="fame"><thead><tr><th>Commander</th><th>Outcome</th><th class="num">Score</th></tr></thead><tbody>
+      ${list.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.outcome)}</td><td class="num">${fmt(r.score)}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted">No missions on record yet. The first colonists to survive will be listed here.</p>'}
+    <div class="row"><button class="btn primary" id="b-back" type="button">Back</button></div>
+  </div>`);
+  $('#b-back').onclick = titleScreen;
+}
+
+/* ---------- setup ---------- */
+function backgroundScreen() {
+  render(`
+  <div class="stack">
+    <span class="label">Step 1 of 4 &middot; Commander</span>
+    <h2>Who is leading this mission?</h2>
+    <label class="stack" style="gap:6px;max-width:360px"><span class="small muted">Your name</span><input type="text" id="leader" maxlength="20" value="${esc(G.leader || 'Commander Rho')}"></label>
+    <div class="picks">
+      ${BACKGROUNDS.map(b => `<button type="button" class="pick" data-id="${b.id}">
+        <span class="name">${b.name}</span>
+        <dl class="spec"><dt>Budget</dt><dd>$${fmt(b.money)}M</dd><dt>Score</dt><dd>&times;${b.mult}</dd></dl>
+        <span class="small muted">${b.perk}</span></button>`).join('')}
+    </div>
+  </div>`);
+  $$('.pick').forEach(el => el.onclick = () => {
+    G.leader = $('#leader').value.trim() || 'Commander Rho';
+    G.bg = BACKGROUNDS.find(b => b.id === el.dataset.id);
+    G.money = G.bg.money; beep(520); crewScreen();
+  });
+}
+function crewScreen() {
+  const shuffled = NAMES.slice().sort(() => Math.random() - 0.5);
+  render(`
+  <div class="stack">
+    <span class="label">Step 2 of 4 &middot; Crew</span>
+    <h2>Who is coming with you?</h2>
+    <p class="muted small">Each crew seat costs $${CREW_COST}M for training. More hands build the base faster and survive accidents better, but every one of them eats, drinks and breathes. Leave a name blank to leave that seat empty.</p>
+    <div class="stack" style="gap:8px;max-width:420px">
+      <div class="row small"><span class="muted" style="width:5.5em">Leader</span><b>${esc(G.leader)}</b></div>
+      ${[0, 1, 2, 3, 4].map(i => `<label class="row small" style="flex-wrap:nowrap"><span class="muted" style="width:5.5em;flex:none">Crew ${i + 1}</span><input type="text" id="crew${i}" maxlength="16" value="${i < 3 ? shuffled[i] : ''}" placeholder="empty seat"></label>`).join('')}
+    </div>
+    <p class="small" id="crew-cost"></p>
+    <div class="row"><button class="btn" id="b-back" type="button">Back</button><button class="btn primary" id="b-next" type="button">Choose a ship</button></div>
+  </div>`);
+  const names = () => [0, 1, 2, 3, 4].map(i => $('#crew' + i).value.trim()).filter(Boolean);
+  const upd = () => { const n = names().length; $('#crew-cost').innerHTML = `Crew of ${n + 1} &middot; training costs <b>$${fmt(n * CREW_COST)}M</b>`; };
+  $$('input', screenEl).forEach(i => i.oninput = upd); upd();
+  $('#b-back').onclick = backgroundScreen;
+  $('#b-next').onclick = () => {
+    const ns = names();
+    G.crew = [G.leader, ...ns].map((name, i) => ({ name, health: 100, alive: true, sick: false, leader: i === 0, cause: '' }));
+    G.money = G.bg.money - ns.length * CREW_COST;
+    beep(520); shipScreen();
+  };
+}
+function shipScreen() {
+  const n = G.crew.length;
+  render(`
+  <div class="stack">
+    <span class="label">Step 3 of 4 &middot; Vehicle</span>
+    <h2>Choose your ship</h2>
+    <p class="muted small">Budget after crew training: <b class="warn">$${fmt(G.money)}M</b>. Crew of ${n}.</p>
+    <div class="picks">
+      ${SHIPS.map(s => {
+        const ok = s.seats >= n && s.cost <= G.money;
+        const why = s.seats < n ? `Seats only ${s.seats}` : s.cost > G.money ? 'Over budget' : '';
+        return `<button type="button" class="pick" data-id="${s.id}" ${ok ? '' : 'disabled'}>
+        <span class="name">${s.name}</span>
+        <dl class="spec"><dt>Price</dt><dd>$${fmt(s.cost)}M</dd><dt>Cargo</dt><dd>${s.cargo} t</dd><dt>Hull</dt><dd>${s.hull}</dd><dt>Transit</dt><dd>${s.days} days</dd><dt>Seats</dt><dd>${s.seats}</dd></dl>
+        <span class="small muted">${s.blurb}</span>${why ? `<span class="small bad">${why}</span>` : ''}</button>`;
+      }).join('')}
+    </div>
+    <div class="row"><button class="btn" id="b-back" type="button">Back</button></div>
+  </div>`);
+  $('#b-back').onclick = crewScreen;
+  $$('.pick').forEach(el => el.onclick = () => {
+    G.ship = SHIPS.find(s => s.id === el.dataset.id);
+    G.money -= G.ship.cost; G.hull = G.hullMax = G.ship.hull;
+    beep(520); storeScreen();
+  });
+}
+function storeScreen() {
+  const n = G.crew.length, days = G.ship.days;
+  const need = n * (days + SURFACE_SOLS);
+  const spent = () => ITEMS.reduce((a, it) => a + G.buy[it.k] * it.cost, 0);
+  const mass = () => ITEMS.reduce((a, it) => a + G.buy[it.k] * it.mass, 0);
+  render(`
+  <div class="stack">
+    <span class="label">Step 4 of 4 &middot; Earth Depot</span>
+    <h2>Stock the hold</h2>
+    <div class="advisor">Depot clerk: &ldquo;${n} people, ${days} days in transit and ${SURFACE_SOLS} sols on the surface comes to about <b>${fmt(need)} crew-days</b> each of food, water and air. Greenhouses, ice extractors and oxygenators can make up the difference once you land, if you bring the module kits and a few solar arrays to run them. Keep 4 or more propellant pods for the landing.&rdquo;</div>
+    <div class="table-wrap"><table class="store">
+      <thead><tr><th>Item</th><th>Covers</th><th class="num">Price</th><th class="num">Mass</th><th>Qty</th><th class="num">Total</th></tr></thead>
+      <tbody>${ITEMS.map(it => `<tr><td>${it.name}</td><td class="small muted">${it.unit}</td><td class="num">$${it.cost}M</td><td class="num">${it.mass} t</td>
+        <td><span class="qty"><button class="btn tiny" type="button" data-k="${it.k}" data-d="-1" aria-label="One fewer ${it.name}">&minus;</button><span id="q-${it.k}">0</span><button class="btn tiny" type="button" data-k="${it.k}" data-d="1" aria-label="One more ${it.name}">+</button><button class="btn tiny" type="button" data-k="${it.k}" data-d="5" aria-label="Five more ${it.name}">+5</button></span></td>
+        <td class="num small" id="t-${it.k}"></td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="stack" style="gap:6px">
+      <div class="row small" style="justify-content:space-between"><span>Cargo <b id="mass"></b> of ${G.ship.cargo} t</span><span>Money left <b id="money"></b></span></div>
+      <div class="meter" id="mass-m"><i></i></div>
+    </div>
+    <p class="small muted" id="covers"></p>
+    <div class="row"><button class="btn" id="b-suggest" type="button">Fill with a suggested load</button><button class="btn primary" id="b-go" type="button">Head to the launch site</button></div>
+  </div>`);
+  const upd = () => {
+    ITEMS.forEach(it => { $('#q-' + it.k).textContent = G.buy[it.k]; $('#t-' + it.k).textContent = G.buy[it.k] ? `$${G.buy[it.k] * it.cost}M` : ''; });
+    const m = mass(), left = G.money - spent();
+    $('#mass').textContent = m.toFixed(1) + ' t'; $('#money').textContent = `$${fmt(left)}M`;
+    $('#mass-m i').style.width = clamp(m / G.ship.cargo * 100, 0, 100) + '%';
+    $('#mass-m').classList.toggle('hot', m > G.ship.cargo * 0.9);
+    const cd = k => G.buy[k] * ITEMS.find(i => i.k === k).per;
+    $('#covers').textContent = `Food ${fmt(cd('food'))}, water ${fmt(cd('water'))}, O₂ ${fmt(cd('o2'))} crew-days. Your crew of ${n} eats ${n} crew-days of food a day; recyclers stretch water and O₂ by 20% in transit.`;
+  };
+  $$('[data-k]').forEach(b => b.onclick = () => {
+    const it = ITEMS.find(i => i.k === b.dataset.k), d = +b.dataset.d;
+    for (let i = 0; i < Math.abs(d); i++) {
+      if (d > 0) {
+        if (spent() + it.cost > G.money || mass() + it.mass > G.ship.cargo + 1e-9) { beep(140, 0.15); break; }
+        G.buy[it.k]++;
+      } else if (G.buy[it.k] > 0) G.buy[it.k]--;
+    }
+    beep(d > 0 ? 700 : 500, 0.04); upd();
+  });
+  $('#b-suggest').onclick = () => {
+    Object.keys(G.buy).forEach(k => G.buy[k] = 0);
+    const tryAdd = k => { const it = ITEMS.find(i => i.k === k); if (spent() + it.cost <= G.money && mass() + it.mass <= G.ship.cargo) { G.buy[k]++; return true; } return false; };
+    const fill = (targets) => { // round-robin so a small budget still gets a balanced hold
+      let progress = true;
+      while (progress) { progress = false; for (const [k, q] of targets) if (G.buy[k] < q && tryAdd(k)) progress = true; }
+    };
+    const transit = n * (days + 30);
+    fill([['food', Math.ceil(transit / 60)], ['water', Math.ceil(transit / 90)], ['o2', Math.ceil(transit / 90)], ['fuel', 5]]);
+    fill([['parts', 4], ['med', 3], ['kits', 5]]);
+    fill([['food', Math.ceil(need * 0.8 / 60)], ['water', Math.ceil(need * 0.7 / 90)], ['o2', Math.ceil(need * 0.7 / 90)], ['kits', 6], ['parts', 6]]);
+    beep(700); upd();
+  };
+  $('#b-go').onclick = () => {
+    ITEMS.forEach(it => G.s[it.k] = G.buy[it.k] * it.per);
+    G.money -= spent();
+    beep(660); launchScreen(1);
+  };
+  upd();
+}
+
+/* ---------- launch control ---------- */
+function makeWeather() {
+  const good = chance(0.5);
+  const w = {
+    wind: good ? ri(4, 26) : ri(8, 44),
+    ceiling: good ? ri(45, 120) * 100 : ri(15, 100) * 100,
+    lightning: good ? ri(14, 60) : ri(2, 40),
+    shear: good ? pick(['Low', 'Low', 'Moderate']) : pick(['Low', 'Moderate', 'High', 'High']),
+  };
+  w.fails = [w.wind > 30, w.ceiling < 4000, w.lightning < 10, w.shear === 'High'];
+  w.violations = w.fails.filter(Boolean).length;
+  return w;
+}
+function launchScreen(windowDay) {
+  stopLoops(); setClock(`Launch window day ${windowDay} of 5`);
+  const w = makeWeather();
+  const last = windowDay === 5;
+  const cell = (name, val, lim, fail) => `<div class="wx-cell ${fail ? 'fail' : ''}"><span class="label">${name}</span><span class="readout">${val}</span><span class="lim">${lim}</span><span class="small ${fail ? 'bad' : 'good'}">${fail ? 'NO-GO' : 'GO'}</span></div>`;
+  render(`
+  <div class="stack">
+    <span class="label">Launch control &middot; Pad 39C</span>
+    <h2>Weather briefing, window day ${windowDay} of 5</h2>
+    <p class="small muted">The launch director looks at you. Every reading must be inside its limit for a clean launch. Scrubbing costs a day of the window.</p>
+    <div class="wx">
+      ${cell('Surface wind', w.wind + ' kt', 'Limit: 30 kt or less', w.fails[0])}
+      ${cell('Cloud ceiling', fmt(w.ceiling) + ' ft', 'Limit: 4,000 ft or higher', w.fails[1])}
+      ${cell('Lightning', w.lightning + ' nmi', 'Limit: no strikes within 10 nmi', w.fails[2])}
+      ${cell('Upper-level shear', w.shear, 'Limit: not High', w.fails[3])}
+    </div>
+    ${last ? '<p class="small bad">This is the last day of the window. Scrub now and the mission waits 26 months for the next one.</p>' : ''}
+    <div class="row">
+      <button class="btn primary" id="b-go" type="button">GO for launch</button>
+      <button class="btn danger" id="b-scrub" type="button">${last ? 'Scrub the mission' : 'SCRUB, try tomorrow'}</button>
+    </div>
+  </div>`);
+  $('#b-go').onclick = () => { beep(880); countdownScreen(w); };
+  $('#b-scrub').onclick = () => {
+    beep(220);
+    if (last) { gameOver('The window closed with your rocket still on the pad. The investors pulled out.', 'Scrubbed'); return; }
+    launchScreen(windowDay + 1);
+  };
+}
+function countdownScreen(w) {
+  stopLoops();
+  render(`
+  <div class="stack" style="align-items:center;text-align:center">
+    <span class="label">Final countdown</span>
+    <h2>Press LAUNCH at T&minus;0</h2>
+    <p class="small muted">Too early and the hold-down clamps are still locked. Too late and the engines idle on the pad, burning propellant. Space bar works too.</p>
+    <div class="countdown" id="cd">T-10</div>
+    <button class="launch-btn" id="b-launch" type="button">LAUNCH</button>
+  </div>`);
+  const start = performance.now() + 600, step = 700; // ms per count
+  let pressed = false;
+  const fire = () => {
+    if (pressed) return; pressed = true;
+    const now = performance.now(), tZero = start + 10 * step, diff = now - tZero;
+    stopLoops(); $('#b-launch').disabled = true;
+    let msg, cls;
+    if (diff < -250) { G.hull -= 8; msg = `You hit it ${(-diff / 1000).toFixed(1)} s early. The clamps shriek as the stack tears free. Hull &minus;8.`; cls = 'bad'; }
+    else if (diff <= 350) { G.s.fuel += 1; msg = 'Perfect ignition. The flight computer banks the saved propellant: +1 propellant pod.'; cls = 'good'; }
+    else if (diff <= 1500) { msg = `Ignition ${(diff / 1000).toFixed(1)} s late. Nothing lost but the director's patience.`; cls = 'warn'; }
+    else { G.s.fuel = Math.max(0, G.s.fuel - 1); msg = 'Very late. The engines idled on the pad and burned off a propellant pod.'; cls = 'bad'; }
+    let wx = '';
+    if (w.violations) {
+      const dmg = w.violations * ri(8, 14); G.hull -= dmg;
+      wx = ` You launched into bad weather (${w.violations} limit${w.violations > 1 ? 's' : ''} broken). Buffeting on the way up cost ${dmg} hull.`;
+      if (w.fails[2] && chance(0.5)) { const p = pick(alive()); hurt(p, 20, 'a lightning-induced electrical fire'); wx += ` A lightning strike fried a console and burned ${esc(p.name)}.`; }
+    } else wx = ' Clear skies the whole way up.';
+    G.log = [];
+    log(`Liftoff from Pad 39C. ${msg}${wx}`, cls);
+    beep(110, 1.2, 'sawtooth', 0.06);
+    $('#cd').textContent = 'LIFTOFF';
+    screenEl.querySelector('.stack').insertAdjacentHTML('beforeend', `<p class="${cls}">${msg}</p><p>${wx}</p><button class="btn primary" id="b-next" type="button">Climb to orbit</button>`);
+    $('#b-next').onclick = orbitIntro; $('#b-next').focus();
+  };
+  $('#b-launch').onclick = fire;
+  keyHandler = e => { if (e.key === ' ' || e.key === 'Enter') fire(); };
+  let lastShown = 11;
+  const tick = () => {
+    const el = $('#cd'); if (!el) return;
+    const elapsed = performance.now() - start;
+    const n = Math.ceil(10 - elapsed / step);
+    if (n !== lastShown && n >= 0) { lastShown = n; el.textContent = 'T-' + n; beep(n === 0 ? 1200 : 600, 0.06); }
+    if (n < 0) el.textContent = 'T+' + Math.floor(-n);
+    if (elapsed > 10 * step + 4000 && !pressed) { fire(); return; }
+    rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+/* ---------- ascent mini-game ---------- */
+function orbitIntro() {
+  stopLoops(); setClock('Ascent');
+  render(`
+  <div class="mg">
+    <span class="label">Ascent &middot; Low Earth orbit</span>
+    <h2>Thread the orbital traffic</h2>
+    <p class="small muted">Forty thousand satellites and a century of junk sit between you and open space. Steer with the arrow keys or WASD, or drag on the screen. Each hit costs 8 hull. Hold on for 25 seconds.</p>
+    <div class="cv-wrap"><canvas id="cv" width="640" height="400"></canvas><div class="cv-hud" id="hud"></div></div>
+    <div class="row"><button class="btn primary" id="b-start" type="button">Start the burn</button><button class="btn" id="b-auto" type="button">Let autopilot fly (hull &minus;15)</button></div>
+  </div>`);
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  drawSpace(ctx, 640, 400, 0);
+  $('#b-auto').onclick = () => { G.hull -= 15; log('Autopilot flew the ascent. A clipped solar panel cost 15 hull.', 'bad'); startCruise(); };
+  $('#b-start').onclick = () => { $('#b-start').disabled = true; $('#b-auto').disabled = true; runOrbit(cv, ctx); };
+}
+const STARS = Array.from({ length: 90 }, () => ({ x: Math.random(), y: Math.random(), s: Math.random() * 1.5 + 0.4 }));
+function drawSpace(ctx, W, H, scroll) {
+  ctx.fillStyle = '#07060d'; ctx.fillRect(0, 0, W, H);
+  for (const s of STARS) { ctx.fillStyle = 'rgba(255,240,210,0.6)'; ctx.fillRect(s.x * W, ((s.y * H + scroll * s.s) % H), s.s, s.s); }
+}
+function runOrbit(cv, ctx) {
+  const W = 640, H = 400, DUR = 25;
+  const ship = { x: W / 2, y: H - 70 };
+  let objs = [], t = 0, spawn = 0, hits = 0, inv = 0, last = performance.now(), target = null;
+  const toCanvas = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
+  cv.onpointerdown = e => { target = toCanvas(e); cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = e => { if (target) target = toCanvas(e); };
+  cv.onpointerup = cv.onpointercancel = () => { target = null; };
+  keyHandler = () => {};
+  const add = () => {
+    const r = Math.random();
+    if (r < 0.5) objs.push({ type: 'debris', x: rand(10, W - 10), y: -10, vx: rand(-40, 40), vy: rand(170, 260) + t * 4, r: 6, rot: 0 });
+    else if (r < 0.85) objs.push({ type: 'sat', x: rand(30, W - 30), y: -30, vx: rand(-30, 30), vy: rand(100, 160) + t * 3, r: 15, rot: rand(0, 6), spin: rand(-2, 2) });
+    else { const x0 = rand(-40, W * 0.4), dir = chance(0.5) ? 1 : -1; for (let i = 0; i < 6; i++) objs.push({ type: 'train', x: dir > 0 ? x0 + i * 26 : W - x0 - i * 26, y: -20 - i * 18, vx: 60 * dir, vy: 140, r: 6, rot: 0 }); }
+  };
+  const frame = now => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+    // move ship
+    let mx = 0, my = 0;
+    if (keyDown('arrowleft', 'a')) mx -= 1; if (keyDown('arrowright', 'd')) mx += 1;
+    if (keyDown('arrowup', 'w')) my -= 1; if (keyDown('arrowdown', 's')) my += 1;
+    if (target) { const dx = target.x - ship.x, dy = target.y - 30 - ship.y, d = Math.hypot(dx, dy); if (d > 4) { mx = dx / d; my = dy / d; } }
+    ship.x = clamp(ship.x + mx * 280 * dt, 14, W - 14); ship.y = clamp(ship.y + my * 220 * dt, 40, H - 20);
+    spawn -= dt; if (spawn <= 0 && t < DUR - 1.5) { add(); spawn = Math.max(0.22, 0.85 - t * 0.025); }
+    for (const o of objs) { o.x += o.vx * dt; o.y += o.vy * dt; if (o.spin) o.rot += o.spin * dt; }
+    objs = objs.filter(o => o.y < H + 40 && o.x > -60 && o.x < W + 60);
+    inv = Math.max(0, inv - dt);
+    if (!inv) for (const o of objs) if (Math.hypot(o.x - ship.x, o.y - ship.y) < o.r + 9) { hits++; inv = 1; beep(90, 0.25, 'sawtooth', 0.06); break; }
+    // draw
+    drawSpace(ctx, W, H, t * 60);
+    const earthY = H + 260 + t * 40; // Earth falls away below
+    const eg = ctx.createRadialGradient(W / 2, earthY, 200, W / 2, earthY, 480);
+    eg.addColorStop(0, '#2b6cb0'); eg.addColorStop(0.92, '#1d4f8a'); eg.addColorStop(1, 'rgba(127,211,221,0.0)');
+    ctx.fillStyle = eg; ctx.beginPath(); ctx.arc(W / 2, earthY, 480, 0, Math.PI * 2); ctx.fill();
+    for (const o of objs) {
+      ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot);
+      if (o.type === 'sat') {
+        ctx.fillStyle = '#c9c2b0'; ctx.fillRect(-5, -5, 10, 10);
+        ctx.fillStyle = '#3d6fb8'; ctx.fillRect(-19, -4, 12, 8); ctx.fillRect(7, -4, 12, 8);
+        ctx.strokeStyle = '#7fd3dd'; ctx.strokeRect(-19, -4, 12, 8); ctx.strokeRect(7, -4, 12, 8);
+      } else if (o.type === 'train') {
+        ctx.fillStyle = '#e8e2d0'; ctx.fillRect(-6, -2, 12, 4);
+      } else {
+        ctx.fillStyle = '#8c7f6a'; ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(2, -6); ctx.lineTo(6, 2); ctx.lineTo(-2, 6); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (!(inv > 0 && Math.floor(t * 12) % 2)) {
+      ctx.fillStyle = '#f2c46d'; ctx.beginPath(); ctx.moveTo(ship.x, ship.y - 16); ctx.lineTo(ship.x - 10, ship.y + 12); ctx.lineTo(ship.x + 10, ship.y + 12); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = `rgba(255,${ri(90, 160)},40,0.9)`; ctx.beginPath(); ctx.moveTo(ship.x - 5, ship.y + 12); ctx.lineTo(ship.x + 5, ship.y + 12); ctx.lineTo(ship.x, ship.y + 22 + Math.random() * 8); ctx.closePath(); ctx.fill();
+    }
+    $('#hud').innerHTML = `<span>ALT ${fmt(200 + t / DUR * 1800)} km</span><span>HITS ${hits}</span><span>T ${Math.max(0, DUR - t).toFixed(1)}</span>`;
+    if (t >= DUR) {
+      const dmg = hits * 8; G.hull -= dmg;
+      log(hits ? `Cleared low Earth orbit after ${hits} collision${hits > 1 ? 's' : ''}. Hull &minus;${dmg}.` : 'Cleared low Earth orbit without a scratch. Mission control applauds.', hits ? 'bad' : 'good');
+      if (!hits) G.morale = clamp(G.morale + 10, 0, 100);
+      stopLoops();
+      $('.mg p').outerHTML = `<p class="${hits ? 'bad' : 'good'}">${hits ? `${hits} hit${hits > 1 ? 's' : ''}. Hull is at ${Math.max(0, G.hull)} of ${G.hullMax}.` : 'Clean run. Crew morale is up.'}</p>`;
+      const row = $('.mg .row'); row.innerHTML = '<button class="btn primary" id="b-next" type="button">Begin the trans-Mars injection burn</button>';
+      $('#b-next').onclick = startCruise; $('#b-next').focus();
+      return;
+    }
+    rafId = requestAnimationFrame(frame);
+  };
+  rafId = requestAnimationFrame(frame);
+}
+
+/* ---------- cruise ---------- */
+function startCruise() {
+  stopLoops();
+  if (G.hull <= 0) { gameOver('The hull failed before you ever left Earth orbit.', 'Lost on ascent', 'hull breach'); return; }
+  G.phase = 'cruise';
+  log(`Trans-Mars injection complete. ${G.ship.days} days to Mars at cruise speed.`, 'note');
+  journeyScreen();
+}
+const speed = () => (1 / G.ship.days) * (G.pace === 'burn' ? 1.3 : 1);
+function supplyDays(k) { const n = alive().length; if (!n) return 0; const rate = k === 'food' ? RATIONS[G.rations].rate : 0.8; return G.s[k] / (n * rate); }
+function journeyScreen() {
+  stopLoops();
+  render(`
+  <div class="stack">
+    <div class="row" style="justify-content:space-between"><h2 id="j-title">Deep space</h2><span class="small muted" id="j-dist"></span></div>
+    <div class="track" aria-hidden="true"><span class="planet earth"></span><span class="planet mars"></span><span class="ship" id="ship-mark"></span></div>
+    <div class="journey">
+      <div class="stack" style="gap:8px;min-width:0"><span class="label">Ship's log</span><div class="log" id="log">${G.log.map(logLine).join('')}</div></div>
+      <div class="stack" style="gap:12px;min-width:0">
+        <span class="label">Ship status</span>
+        <dl class="stats" id="stats"></dl>
+        <span class="label">Crew</span>
+        <div class="crew" id="crew"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="b-run" type="button">Continue</button>
+      <label>Pace <select id="pace"><option value="cruise">Cruise</option><option value="burn">Burn hard (+30%, uses fuel)</option></select></label>
+      <label>Rations <select id="rations">${Object.entries(RATIONS).map(([k, r]) => `<option value="${k}">${r.label}</option>`).join('')}</select></label>
+      <button class="btn" id="b-repair" type="button">Repair hull</button>
+      <button class="btn" id="b-treat" type="button">Treat the sick</button>
+    </div>
+    <div id="event" hidden></div>
+  </div>`);
+  $('#log').scrollTop = 1e9;
+  $('#pace').value = G.pace; $('#rations').value = G.rations;
+  $('#pace').onchange = e => { G.pace = e.target.value; log(G.pace === 'burn' ? 'Engines throttled up. Burning hard for Mars.' : 'Engines back to cruise.', 'note'); };
+  $('#rations').onchange = e => { G.rations = e.target.value; log(`Rations set to ${RATIONS[G.rations].label.toLowerCase()}.`, 'note'); updateJourney(); };
+  $('#b-run').onclick = () => G.running ? pauseCruise() : runCruise();
+  $('#b-repair').onclick = repairHull;
+  $('#b-treat').onclick = treatSick;
+  G.running = false;
+  updateJourney();
+}
+function statusBar(v, max) { const pct = clamp(v / max * 100, 0, 100); return `<div class="meter ${pct < 35 ? 'hot' : ''}" style="width:100%"><i style="width:${pct}%"></i></div>`; }
+function supplyCell(k, label) { const d = supplyDays(k); const cls = d < 15 ? 'bad' : d < 45 ? 'warn' : ''; return `<dt>${label}</dt><dd class="${cls}">${fmt(G.s[k])} <span class="muted">(${fmt(d)} days)</span></dd>`; }
+function crewHTML() {
+  return G.crew.map(c => {
+    const st = !c.alive ? 'Lost' : c.sick ? 'Sick' : c.health > 70 ? 'Good' : c.health > 40 ? 'Fair' : 'Poor';
+    const cls = !c.alive ? '' : c.sick || c.health <= 40 ? 'bad' : c.health <= 70 ? 'warn' : 'good';
+    return `<div class="crew-row ${c.alive ? '' : 'dead'}"><span>${esc(c.name)}${c.leader ? ' <span class="muted">(cdr)</span>' : ''}</span>${c.alive ? statusBar(c.health, 100) : '<span></span>'}<span class="tag ${cls}">${st}</span></div>`;
+  }).join('') + (G.cat ? '<div class="crew-row"><span>Sputnik <span class="muted">(cat)</span></span><span></span><span class="tag good">Smug</span></div>' : '');
+}
+function updateJourney() {
+  if (!$('#stats')) return;
+  const left = Math.max(0, TOTAL_KM * (1 - G.progress));
+  $('#j-dist').textContent = `${left.toFixed(1)} million km to Mars`;
+  $('#ship-mark').style.left = clamp(G.progress * 100, 0, 100) + '%';
+  setClock(`Mission day ${G.day}`);
+  $('#stats').innerHTML = `
+    <dt>Hull</dt><dd>${statusBar(G.hull, G.hullMax)}<span class="small">${Math.max(0, Math.round(G.hull))} / ${G.hullMax}</span></dd>
+    ${supplyCell('food', 'Food')}${supplyCell('water', 'Water')}${supplyCell('o2', 'O₂')}
+    <dt>Propellant</dt><dd class="${G.s.fuel < 4 ? 'warn' : ''}">${G.s.fuel.toFixed(1)} pods</dd>
+    <dt>Parts</dt><dd>${G.s.parts} kits</dd><dt>Medkits</dt><dd>${G.s.med}</dd><dt>Hab kits</dt><dd>${G.s.kits}</dd>
+    <dt>Morale</dt><dd>${statusBar(G.morale, 100)}</dd>`;
+  $('#crew').innerHTML = crewHTML();
+  $('#b-run').textContent = G.running ? 'Pause' : 'Continue';
+  $('#b-repair').disabled = !G.s.parts || G.hull >= G.hullMax;
+  $('#b-treat').disabled = !G.s.med || !alive().some(c => c.sick || c.health < 70);
+}
+function repairHull() {
+  if (!G.s.parts || G.hull >= G.hullMax) return;
+  const amt = Math.round(20 * (bgIs('eng') ? 1.5 : 1));
+  G.s.parts--; G.hull = Math.min(G.hullMax, G.hull + amt);
+  log(`Spacewalk repair: +${amt} hull. One parts kit used.`, 'good'); beep(700); updateUI();
+}
+function treatSick() {
+  if (!G.s.med) return;
+  const p = alive().filter(c => c.sick || c.health < 70).sort((a, b) => (b.sick - a.sick) || (a.health - b.health))[0];
+  if (!p) return;
+  const amt = 30 * (bgIs('doc') ? 2 : 1);
+  G.s.med--; p.sick = false; heal(p, amt);
+  log(`Treated ${esc(p.name)} with a medkit. +${amt} health.`, 'good'); beep(700); updateUI();
+}
+function updateUI() { if (G.base) updateBase(); else updateJourney(); }
+function runCruise() { if (G.running) return; G.running = true; updateJourney(); clearInterval(tickTimer); tickTimer = setInterval(cruiseDay, 170); }
+function pauseCruise() { G.running = false; clearInterval(tickTimer); tickTimer = null; updateUI(); }
+
+// shared daily consumption for space and surface
+function consumeDay() {
+  const crew = alive(), n = crew.length, r = RATIONS[G.rations];
+  const lsRate = G.base ? 1 : 0.8; // recyclers on the ship stretch water and air
+  G.s.food -= n * r.rate; G.s.water -= n * lsRate; G.s.o2 -= n * lsRate;
+  const starving = G.s.food < 0, thirsty = G.s.water < 0, choking = G.s.o2 < 0;
+  G.s.food = Math.max(0, G.s.food); G.s.water = Math.max(0, G.s.water); G.s.o2 = Math.max(0, G.s.o2);
+  for (const p of crew) {
+    if (choking) hurt(p, 18, 'asphyxiation');
+    if (thirsty) hurt(p, 6, 'dehydration');
+    if (starving) hurt(p, 3, 'starvation');
+    else if (r.heal > 0 && !p.sick && !thirsty && !choking) heal(p, r.heal * (G.morale > 30 ? 1 : 0.3));
+    else if (r.heal < 0) hurt(p, -r.heal, 'malnutrition');
+    if (p.sick) { hurt(p, 1.3, pick(['space dysentery', 'a fever nobody could name', 'zero-g flu'])); if (chance(0.04)) { p.sick = false; log(`${esc(p.name)} has recovered.`, 'good'); } }
+    else if (chance(bgIs('doc') ? 0.0015 : 0.003)) { p.sick = true; log(`${esc(p.name)} has come down with ${pick(['space dysentery', 'a fever', 'zero-g flu', 'a nasty rash'])}.`, 'bad'); }
+    if (G.morale < 20) hurt(p, 0.3, 'despair');
+  }
+  G.morale = clamp(G.morale + (G.rations === 'full' ? 0.1 : -0.25) + (G.cat ? 0.1 : 0), 0, 100);
+  if (choking && chance(0.5)) log('Oxygen is gone. The crew is suffocating.', 'bad');
+  else if (thirsty && chance(0.2)) log('The water tanks are dry.', 'bad');
+  else if (starving && chance(0.1)) log('There is no food left.', 'bad');
+}
+// returns true when the game ended
+function checkDeaths() {
+  for (const p of G.crew) if (p.alive && p.health <= 0) {
+    p.alive = false; p.diedOn = G.base ? `sol ${G.base.sol}` : `day ${G.day}`;
+    log(`${esc(p.name)} has died of ${p.cause || 'unknown causes'}.`, 'bad'); beep(160, 0.6, 'triangle', 0.06);
+    G.morale = clamp(G.morale - 20, 0, 100);
+  }
+  if (G.hull <= 0 && !G.base) { gameOver(`The hull gave way on day ${G.day}. The ship is still out there, drifting toward the asteroid belt.`, 'Lost in space', 'hull breach'); return true; }
+  if (!alive().length) { gameOver('There is no one left aboard to answer Mission Control.', G.base ? 'Lost on Mars' : 'Lost in space'); return true; }
+  return false;
+}
+const MILESTONES = [
+  [0.02, "Passed the Moon's orbit. Earth is a blue marble behind you."],
+  [0.08, 'Clear of the Van Allen belts. Radiation counters settle down.'],
+  [0.33, 'One third of the way. Radio lag to Earth is now over 4 minutes.'],
+  [0.5, 'Halfway to Mars. 112 million km behind you, and no turning back.'],
+  [0.8, 'Mars is now a visible disc, rust-orange and growing every day.'],
+  [0.95, 'Phobos and Deimos are visible through the cupola.'],
+];
+function cruiseDay() {
+  G.day++;
+  if (G.delay > 0) G.delay--;
+  else {
+    G.progress += speed();
+    if (G.pace === 'burn') {
+      G.s.fuel = Math.max(0, G.s.fuel - 0.06);
+      if (G.s.fuel < 4.5) { G.pace = 'cruise'; $('#pace').value = 'cruise'; log('Propellant reserve reached. Flight computer cut back to cruise to save fuel for landing.', 'note'); }
+    }
+  }
+  consumeDay();
+  for (const [p, msg] of MILESTONES) if (G.progress >= p && !G.flags['m' + p]) { G.flags['m' + p] = true; log(msg, 'note'); }
+  if (checkDeaths()) return;
+  updateJourney();
+  if (G.progress >= 1) { pauseCruise(); arriveMars(); return; }
+  // scripted beats, then random events
+  if (G.progress >= 0.25 && !G.flags.drift1) { G.flags.drift1 = true; return driftEvent(); }
+  if (G.progress >= 0.5 && !G.flags.signal) { G.flags.signal = 'heard'; return signalEvent(); }
+  if (G.progress >= 0.72 && !G.flags.drift2) { G.flags.drift2 = true; return driftEvent(); }
+  if (G.day - G.lastEvent > 4 && chance(0.07)) randomSpaceEvent();
+}
+function showEvent(ev) {
+  pauseCruise();
+  G.lastEvent = G.day;
+  const box = $('#event'); box.hidden = false;
+  box.innerHTML = `<div class="event-box" role="dialog" aria-label="${esc(ev.title)}"><h3>${ev.title}</h3><p>${ev.text}</p><div class="choices">${ev.choices.map((c, i) => `<button class="btn ${i === 0 ? 'primary' : ''}" type="button" data-i="${i}" ${c.disabled ? 'disabled' : ''}>${c.label}</button>`).join('')}</div></div>`;
+  beep(980, 0.07); setTimeout(() => beep(1320, 0.09), 90);
+  $$('button', box).forEach(b => b.onclick = () => {
+    const c = ev.choices[+b.dataset.i];
+    const r = c.fn ? c.fn() : null;
+    if (r === false) return; // choice navigated elsewhere
+    const close = () => { box.hidden = true; box.innerHTML = ''; updateUI(); if (!checkDeaths() && G.phase === 'cruise') runCruise(); };
+    if (r) {
+      log(r, '');
+      box.querySelector('.event-box').innerHTML = `<h3>${ev.title}</h3><p>${r}</p><div class="choices"><button class="btn primary" type="button" id="ev-ok">Continue</button></div>`;
+      $('#ev-ok').onclick = close; $('#ev-ok').focus();
+    } else close();
+  });
+  $('button', box).focus();
+}
+function randomSpaceEvent() {
+  const crew = alive(), p = pick(crew);
+  const events = [
+    () => {
+      const dmg = ri(6, 16); G.hull -= dmg;
+      return { title: 'Micrometeoroid strike', text: `A grain of rock moving at 30 km/s punches through the outer hull. Hull &minus;${dmg}. Alarms everywhere.`, choices: [
+        { label: 'Seal it and carry on', fn: () => 'Foam sealant holds. For now.' },
+        { label: `Spacewalk to patch it properly (1 parts kit)${bgIs('eng') ? ', engineer bonus' : ''}`, disabled: !G.s.parts, fn: () => { G.s.parts--; const a = Math.round(dmg + 10 * (bgIs('eng') ? 1.5 : 1)); G.hull = Math.min(G.hullMax, G.hull + a); return `Patched and reinforced. Hull +${a}.`; } },
+      ] };
+    },
+    () => ({ title: 'Solar flare warning', text: 'The Sun has thrown off a coronal mass ejection. Proton storm arrives in 40 minutes.', choices: [
+      { label: 'Shelter behind the water tanks (2 days, no progress)', fn: () => { G.delay += 2; return 'Everyone crams into the storm shelter. Two very long, very boring days.'; } },
+      { label: 'Keep working through it', fn: () => { const hit = crew.filter(() => chance(0.5)); hit.forEach(c => hurt(c, ri(15, 25), 'radiation sickness')); return hit.length ? `${hit.map(c => esc(c.name)).join(', ')} took a heavy dose of radiation.` : 'The dosimeters crackle, but everyone got lucky.'; } },
+    ] }),
+    () => ({ title: `${esc(p.name)} is unwell`, text: `${esc(p.name)} has a high fever and can't keep food down. The ship's doctor-in-a-box suggests ${pick(['space dysentery', 'zero-g flu', 'an infection'])}.`, choices: [
+      { label: `Use a medkit (${G.s.med} left)`, disabled: !G.s.med, fn: () => { G.s.med--; p.sick = false; heal(p, 30 * (bgIs('doc') ? 2 : 1)); return `${esc(p.name)} is on the mend.`; } },
+      { label: 'Bed rest and hope', fn: () => { p.sick = true; return `${esc(p.name)} is confined to quarters.`; } },
+    ] }),
+    () => ({ title: 'CO₂ scrubber failure', text: 'The carbon dioxide scrubber has seized. CO₂ levels are climbing and the backup is venting oxygen to compensate.', choices: [
+      { label: 'Rebuild it (2 parts kits)', disabled: G.s.parts < 2, fn: () => { G.s.parts -= 2; return 'Rebuilt with duct tape and spare filters. Air quality back to normal.'; } },
+      { label: 'Jury-rig it and accept the losses', fn: () => { const loss = Math.round(G.s.o2 * 0.2); G.s.o2 -= loss; crew.forEach(c => hurt(c, 5, 'CO₂ poisoning')); return `It works, mostly. Lost ${fmt(loss)} crew-days of O₂ and everyone has a headache.`; } },
+    ] }),
+    () => ({ title: 'Derelict probe', text: 'Radar picks up a dead probe drifting 40 km off your bow, solar panels still intact.', choices: [
+      { label: 'Match orbits and salvage it (3 days, 0.3 propellant)', disabled: G.s.fuel < 0.3, fn: () => { G.delay += 3; G.s.fuel -= 0.3; if (chance(0.25)) { G.hull -= 12; return 'The probe tumbles into your airlock arm. Hull &minus;12. You grab nothing.'; } const n = ri(1, 3); G.s.parts += n; return `You strip it for ${n} parts kit${n > 1 ? 's' : ''}. Someone sticks its nameplate on the galley wall.`; } },
+      { label: 'Leave it be', fn: () => 'It drifts out of sight.' },
+    ] }),
+    () => ({ title: 'Cabin fever', text: `${esc(p.name)} and ${esc(pick(crew.filter(c => c !== p))?.name || 'the mirror')} have not spoken in three days. The argument was about whose turn it was to clean the toilet.`, choices: [
+      { label: 'Movie night with the good snacks (−10 crew-days of food)', fn: () => { G.s.food = Math.max(0, G.s.food - 10); G.morale = clamp(G.morale + 20, 0, 100); return 'Popcorn and a terrible old space movie. Everyone is laughing again.'; } },
+      { label: 'Tell them to work it out', fn: () => { G.morale = clamp(G.morale - 12, 0, 100); return 'They do not work it out. Morale drops.'; } },
+    ] }),
+    () => ({ title: 'Propellant leak', text: 'A cracked valve is venting propellant into space. You can see it glittering out the window.', choices: [
+      { label: 'Replace the valve (1 parts kit)', disabled: !G.s.parts, fn: () => { G.s.parts--; G.s.fuel = Math.max(0, G.s.fuel - 0.2); return 'Fixed after losing a tiny amount.'; } },
+      { label: 'Cap it with what you have', fn: () => { const l = Math.min(G.s.fuel, rand(0.6, 1.4)); G.s.fuel -= l; return `The cap holds, eventually. Lost ${l.toFixed(1)} propellant pods.`; } },
+    ] }),
+    () => ({ title: 'Mail from home', text: 'A video packet arrives from Earth: messages from family, a school choir singing the mission song, and a dog that clearly does not understand where its person went.', choices: [
+      { label: 'Watch it together', fn: () => { G.morale = clamp(G.morale + 15, 0, 100); return 'Not a dry eye on the ship. Morale up.'; } },
+    ] }),
+    () => ({ title: 'Navigation computer crash', text: 'The flight computer reboots mid-burn and comes back up insisting it is January 1970.', choices: [
+      { label: 'Restore from backup (1 day)', fn: () => { G.delay += 1; return 'Back online. The computer is sulking.'; } },
+      { label: 'Fly by hand until it settles', fn: () => { if (chance(0.4)) { G.delay += 4; return 'You overshoot, then overcorrect. Four days lost.'; } return 'Smooth flying. You might have a future in this.'; } },
+    ] }),
+  ];
+  if (!G.cat && !G.flags.catDone && G.progress > 0.12) events.push(() => { G.flags.catDone = true; return { title: 'Stowaway', text: 'A muffled meow from the cargo bay. Wedged between two food crates is a very annoyed orange cat. Nobody admits to anything.', choices: [
+    { label: 'Adopt the cat', fn: () => { G.cat = true; G.morale = clamp(G.morale + 25, 0, 100); return 'The crew names her Sputnik. She immediately claims the commander\'s bunk. Morale way up, food down a little every day.'; } },
+  ] }; });
+  if (G.flags.signal && !G.flags.signal2 && G.progress > 0.6 && G.flags.signal !== 'ignored') events.push(() => { G.flags.signal2 = true; return { title: 'The signal again', text: 'The signal is back, stronger now. The decoders agree on one thing: it is coming from the surface of Mars, from the plains of Terra Sirenum.', choices: [{ label: 'Mark the coordinates', fn: () => { G.flags.coords = true; return 'Coordinates logged. You will be landing about 900 km away. Close enough to go and look.'; } }] }; });
+  const ev = pick(events)();
+  showEvent(ev);
+}
+function signalEvent() {
+  showEvent({
+    title: 'Strange signal',
+    text: 'The radio picks up a faint, repeating pulse on 928 MHz: three short, three long, then 14 seconds of something that sounds almost like a picture being transmitted. It is not on any frequency Mission Control has assigned.',
+    choices: [
+      { label: 'Spend 3 days decoding it', fn: () => { G.delay += 3; G.flags.signal = 'decoded'; return 'The pulse carries an old telemetry header in Cyrillic, and a partial image: a grey, featureless horizon. Whatever is sending it is very old, and on Mars.'; } },
+      { label: 'Broadcast a reply', fn: () => { G.flags.signal = 'replied'; G.morale = clamp(G.morale + 5, 0, 100); return 'You send back "Hello from the crew of the ' + esc(G.ship.name) + '." Twenty minutes later the pulse stops. Then it starts again, one pulse faster.'; } },
+      { label: 'Ignore it, it is probably interference', fn: () => { G.flags.signal = 'ignored'; return 'You switch frequencies. Somebody keeps switching back.'; } },
+    ],
+  });
+}
+function driftEvent() {
+  showEvent({
+    title: 'Course drift',
+    text: `Navigation reports you are drifting off the transfer orbit. Three correction burns are needed. Each burn costs ${bgIs('eng') ? '0.2' : '0.3'} propellant, and a miss costs more propellant and days. You have ${G.s.fuel.toFixed(1)} pods.`,
+    choices: [
+      { label: 'Take the stick', fn: () => { correctionGame(); return false; } },
+      { label: 'Let the computer do it (slow and wasteful)', fn: () => { const f = Math.min(G.s.fuel, 1.4); G.s.fuel -= f; G.delay += 5; return `The computer gets there eventually. Used ${f.toFixed(1)} pods and lost 5 days.`; } },
+    ],
+  });
+}
+function correctionGame() {
+  stopLoops();
+  render(`
+  <div class="mg">
+    <span class="label">Mid-course correction</span>
+    <h2>Fire when the reticle is in the ring</h2>
+    <p class="small muted">Press space, tap the scope or press FIRE when the crosshair crosses the centre ring. Three burns.</p>
+    <div class="cv-wrap" style="max-width:420px;align-self:center;width:100%"><canvas id="cv" width="400" height="400"></canvas><div class="cv-hud" id="hud"></div></div>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="b-fire" type="button">FIRE</button></div>
+  </div>`);
+  const cv = $('#cv'), ctx = cv.getContext('2d'), W = 400, C = W / 2, RING = 24;
+  let t = 0, burns = [], last = performance.now(), ph = rand(0, 6), done = false;
+  const pos = () => { const sp = 1 + burns.length * 0.35; return { x: C + 150 * Math.sin(t * 1.25 * sp + ph), y: C + 150 * Math.sin(t * 1.85 * sp) }; };
+  const fire = () => {
+    if (done) return;
+    const p = pos(), d = Math.hypot(p.x - C, p.y - C);
+    burns.push({ x: p.x, y: p.y, hit: d <= RING, d });
+    beep(d <= RING ? 1000 : 200, 0.15);
+    if (burns.length === 3) {
+      done = true;
+      const misses = burns.filter(b => !b.hit).length;
+      const cost = (bgIs('eng') ? 0.2 : 0.3) * 3 + misses * 0.4;
+      const used = Math.min(G.s.fuel, cost); G.s.fuel -= used;
+      let msg;
+      if (used < cost) { G.delay += 12; msg = `Out of propellant mid-burn. Gravity assist from the Sun gets you back on course, but it takes 12 extra days.`; }
+      else { G.delay += misses * 3; msg = misses ? `${3 - misses} of 3 burns on target. Used ${used.toFixed(1)} pods and lost ${misses * 3} days.` : `Three perfect burns. Used ${used.toFixed(1)} pods. Navigation is impressed.`; }
+      if (!misses) G.morale = clamp(G.morale + 8, 0, 100);
+      log('Course correction: ' + msg, misses ? 'bad' : 'good');
+      setTimeout(() => {
+        stopLoops();
+        $('.mg p').outerHTML = `<p class="${misses ? 'warn' : 'good'}">${msg}</p>`;
+        const row = $('.mg .row'); row.innerHTML = '<button class="btn primary" id="b-next" type="button">Back to the cruise</button>';
+        $('#b-next').onclick = () => { journeyScreen(); runCruise(); }; $('#b-next').focus();
+      }, 500);
+    }
+  };
+  $('#b-fire').onclick = fire; cv.onpointerdown = fire;
+  keyHandler = e => { if (e.key === ' ' || e.key === 'Enter') fire(); };
+  const frame = now => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!done) t += dt;
+    ctx.fillStyle = '#07060d'; ctx.fillRect(0, 0, W, W);
+    ctx.strokeStyle = 'rgba(127,211,221,0.25)'; ctx.lineWidth = 1;
+    for (let r = 50; r < 200; r += 50) { ctx.beginPath(); ctx.arc(C, C, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(C, 0); ctx.lineTo(C, W); ctx.moveTo(0, C); ctx.lineTo(W, C); ctx.stroke();
+    ctx.strokeStyle = '#95d67c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(C, C, RING, 0, Math.PI * 2); ctx.stroke();
+    for (const b of burns) { ctx.fillStyle = b.hit ? '#95d67c' : '#ff6b5a'; ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI * 2); ctx.fill(); }
+    const p = pos();
+    ctx.strokeStyle = '#f2c46d'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI * 2); ctx.moveTo(p.x - 20, p.y); ctx.lineTo(p.x + 20, p.y); ctx.moveTo(p.x, p.y - 20); ctx.lineTo(p.x, p.y + 20); ctx.stroke();
+    $('#hud').innerHTML = `<span>BURN ${Math.min(3, burns.length + 1)}/3</span><span>Δv ERR ${(Math.hypot(p.x - C, p.y - C) / 10).toFixed(1)} m/s</span>`;
+    rafId = requestAnimationFrame(frame);
+  };
+  rafId = requestAnimationFrame(frame);
+}
+
+/* ---------- landing ---------- */
+function arriveMars() {
+  stopLoops(); G.phase = 'landing';
+  log(`Mars orbit insertion on day ${G.day}. Aerobraking complete.`, 'good');
+  render(`
+  <div class="mg">
+    <span class="label">Entry, descent &amp; landing</span>
+    <h2>Seven minutes of terror</h2>
+    <p>Day ${G.day}. The heat shield glows, the parachute snaps open at 11 km and is cut away at 1.2 km. The last kilometre is yours: up arrow or W fires the engine, left and right tilt the lander. Touch down on the green pad below 3.5 m/s, nearly upright.</p>
+    <p class="small muted">You have ${G.s.fuel.toFixed(1)} propellant pods, which buys about ${Math.round(Math.min(G.s.fuel, 5) * 6)} seconds of engine time. ${G.s.fuel < 1 ? '<b class="bad">Without propellant this will be an airbag landing.</b>' : ''}</p>
+    <div class="cv-wrap"><canvas id="cv" width="640" height="420"></canvas><div class="cv-hud" id="hud"></div></div>
+    <div class="pad-ctrl"><button class="btn" id="t-left" type="button" aria-label="Tilt left">&#9664;</button><button class="btn" id="t-up" type="button" aria-label="Fire engine">&#9650;</button><button class="btn" id="t-right" type="button" aria-label="Tilt right">&#9654;</button></div>
+    <div class="row"><button class="btn primary" id="b-start" type="button">${G.s.fuel < 1 ? 'Brace for impact' : 'Take control'}</button><button class="btn" id="b-auto" type="button">Trust the autopilot</button></div>
+  </div>`);
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const terrain = makeTerrain(640, 420);
+  drawLanding(ctx, terrain, null);
+  $('#b-auto').onclick = () => {
+    const used = Math.min(G.s.fuel, 3); G.s.fuel -= used;
+    landingResult(G.s.fuel + used < 1 ? 'crash' : chance(0.55) ? 'good' : 'rough', { auto: true });
+  };
+  $('#b-start').onclick = () => {
+    $('#b-start').disabled = true; $('#b-auto').disabled = true;
+    if (G.s.fuel < 1) { landingResult('airbag', {}); return; }
+    runLanding(cv, ctx, terrain);
+  };
+}
+function makeTerrain(W, H) {
+  const padW = 90, padX = rand(W * 0.45, W - padW - 30);
+  const pts = []; let y = H - 70;
+  for (let x = 0; x <= W; x += 20) {
+    if (x >= padX - 10 && x <= padX + padW + 10) { pts.push({ x, y: H - 60 }); continue; }
+    y = clamp(y + rand(-28, 28), H - 160, H - 25); pts.push({ x, y });
+  }
+  const rocks = Array.from({ length: 30 }, () => ({ x: rand(0, W), r: rand(1, 3) }));
+  return { pts, padX, padW, padY: H - 60, rocks };
+}
+function groundY(tr, x) {
+  if (x >= tr.padX && x <= tr.padX + tr.padW) return tr.padY;
+  for (let i = 0; i < tr.pts.length - 1; i++) { const a = tr.pts[i], b = tr.pts[i + 1]; if (x >= a.x && x <= b.x) return a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x); }
+  return tr.pts[tr.pts.length - 1].y;
+}
+function drawLanding(ctx, tr, L) {
+  const W = 640, H = 420;
+  const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#2b1a22'); sky.addColorStop(1, '#a8583a');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#6e2c16'; ctx.beginPath(); ctx.moveTo(0, H);
+  for (const p of tr.pts) ctx.lineTo(p.x, Math.min(p.y, groundY(tr, p.x)));
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#4c1d0e'; for (const r of tr.rocks) { ctx.beginPath(); ctx.arc(r.x, groundY(tr, r.x) + 6, r.r, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = '#95d67c'; ctx.fillRect(tr.padX, tr.padY - 3, tr.padW, 4);
+  ctx.fillStyle = 'rgba(149,214,124,0.8)'; ctx.fillRect(tr.padX, tr.padY - 14, 3, 11); ctx.fillRect(tr.padX + tr.padW - 3, tr.padY - 14, 3, 11);
+  if (!L) return;
+  ctx.save(); ctx.translate(L.x, L.y); ctx.rotate(L.a);
+  if (L.thrust && L.fuel > 0) { ctx.fillStyle = `rgba(255,${ri(120, 200)},60,0.9)`; ctx.beginPath(); ctx.moveTo(-6, 10); ctx.lineTo(6, 10); ctx.lineTo(0, 22 + Math.random() * 14); ctx.closePath(); ctx.fill(); }
+  ctx.fillStyle = '#d9d2bf'; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(10, 2); ctx.lineTo(10, 10); ctx.lineTo(-10, 10); ctx.lineTo(-10, 2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#7fd3dd'; ctx.fillRect(-4, -4, 8, 5);
+  ctx.strokeStyle = '#d9d2bf'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-8, 10); ctx.lineTo(-14, 16); ctx.moveTo(8, 10); ctx.lineTo(14, 16); ctx.stroke();
+  ctx.restore();
+}
+function runLanding(cv, ctx, tr) {
+  const GRAV = 37.1, THRUST = 92, ROT = 2.2;
+  const fuel0 = Math.min(G.s.fuel, 5) * 6;
+  const L = { x: rand(60, 160), y: 40, vx: rand(25, 45), vy: 25, a: 0, fuel: fuel0, thrust: false };
+  let last = performance.now();
+  const hold = {};
+  const bindHold = (id, k) => { const b = $(id); b.onpointerdown = e => { hold[k] = true; b.setPointerCapture(e.pointerId); }; b.onpointerup = b.onpointercancel = b.onpointerleave = () => { hold[k] = false; }; };
+  bindHold('#t-left', 'l'); bindHold('#t-up', 'u'); bindHold('#t-right', 'r');
+  keyHandler = () => {};
+  const frame = now => {
+    const dt = Math.min(0.04, (now - last) / 1000); last = now;
+    if (keyDown('arrowleft', 'a') || hold.l) L.a -= ROT * dt;
+    if (keyDown('arrowright', 'd') || hold.r) L.a += ROT * dt;
+    L.a = clamp(L.a, -1.4, 1.4);
+    L.thrust = (keyDown('arrowup', 'w', ' ') || hold.u) && L.fuel > 0;
+    if (L.thrust) { L.vx += Math.sin(L.a) * THRUST * dt; L.vy -= Math.cos(L.a) * THRUST * dt; L.fuel = Math.max(0, L.fuel - dt); if (Math.random() < 0.3) beep(rand(60, 90), 0.05, 'sawtooth', 0.02); }
+    L.vy += GRAV * dt; L.x += L.vx * dt; L.y += L.vy * dt;
+    if (L.x < 10) { L.x = 10; L.vx = Math.abs(L.vx) * 0.3; } if (L.x > 630) { L.x = 630; L.vx = -Math.abs(L.vx) * 0.3; }
+    if (L.y < 10) { L.y = 10; L.vy = Math.max(0, L.vy); }
+    drawLanding(ctx, tr, L);
+    const alt = Math.max(0, groundY(tr, L.x) - (L.y + 16));
+    $('#hud').innerHTML = `<span>ALT ${(alt * 3).toFixed(0)} m</span><span>V↓ ${(L.vy / 10).toFixed(1)} m/s</span><span>V→ ${(L.vx / 10).toFixed(1)}</span><span>FUEL ${L.fuel.toFixed(1)} s</span>`;
+    if (L.y + 16 >= groundY(tr, L.x)) {
+      stopLoops();
+      G.s.fuel = Math.max(0, G.s.fuel - (fuel0 - L.fuel) / 6);
+      const vy = L.vy / 10, vx = Math.abs(L.vx / 10), ang = Math.abs(L.a) * 180 / Math.PI;
+      const onPad = L.x - 8 >= tr.padX && L.x + 8 <= tr.padX + tr.padW;
+      const bad = Math.max(vy, vx * 1.5) + (ang > 15 ? (ang - 15) / 5 : 0);
+      let out;
+      if (bad <= 2 && onPad) out = 'perfect';
+      else if (bad <= 3.5 && onPad) out = 'good';
+      else if (bad <= 3.5) out = 'rough';
+      else if (bad <= 7) out = 'hard';
+      else out = 'crash';
+      const dist = onPad ? 0 : Math.round(Math.min(Math.abs(L.x - tr.padX), Math.abs(L.x - tr.padX - tr.padW)) * 3);
+      landingResult(out, { vy, vx, ang, dist });
+      return;
+    }
+    rafId = requestAnimationFrame(frame);
+  };
+  rafId = requestAnimationFrame(frame);
+}
+function landingResult(out, d) {
+  stopLoops();
+  const crew = alive();
+  const lose = (k, frac) => { const n = Math.floor(G.s[k] * frac); G.s[k] -= n; return n; };
+  let msg = '', cls = 'good';
+  const stats = d.vy !== undefined ? ` Touchdown at ${d.vy.toFixed(1)} m/s, ${d.ang.toFixed(0)}° from upright.` : '';
+  if (out === 'perfect') { msg = 'Bullseye. The lander settles onto the pad like a feather. Mission Control is on its feet.' + stats; G.bonus += 300; G.morale = clamp(G.morale + 15, 0, 100); }
+  else if (out === 'good') { G.hull -= 5; msg = (d.auto ? 'The autopilot puts you down on the pad with a solid thump.' : 'Down on the pad. A firm landing, but a landing.') + stats; G.bonus += 150; }
+  else if (out === 'rough') { G.hull -= 20; const k = lose('kits', 0.2); msg = `${d.auto ? 'The autopilot misjudged the dust and set you down' : 'You touch down'} ${d.dist ? d.dist + ' m from the pad' : 'off the pad'}, on a rock field. A landing leg buckled. Hull &minus;20${k ? `, ${k} hab kit${k > 1 ? 's' : ''} crushed` : ''}.` + stats; cls = 'warn'; }
+  else if (out === 'hard') { G.hull -= 40; crew.forEach(c => hurt(c, ri(10, 30), 'landing injuries')); const k = lose('kits', 0.35), w = lose('water', 0.2); msg = `A hard landing. The lander bounces, tips and rights itself. Hull &minus;40, the crew is battered, ${k} hab kits and ${fmt(w)} crew-days of water lost.` + stats; cls = 'bad'; }
+  else if (out === 'airbag') { G.hull -= 45; crew.forEach(c => hurt(c, ri(15, 35), 'landing injuries')); const k = lose('kits', 0.3); msg = `No propellant, so it's airbags. The lander bounces eleven times across Mars before rolling to a stop. Hull &minus;45, everyone hurt, ${k} hab kits destroyed.`; cls = 'bad'; }
+  else { G.hull = Math.min(G.hull, 15); crew.forEach(c => { if (chance(0.35)) hurt(c, 200, 'the landing'); else hurt(c, ri(25, 50), 'landing injuries'); }); ['kits', 'food', 'water', 'o2', 'parts'].forEach(k => lose(k, 0.5)); msg = 'The lander hits too fast and too hard. When the dust settles, what is left of the ship is a shelter and not much more. Half the cargo is gone.' + stats; cls = 'bad'; }
+  log('Landing: ' + msg, cls);
+  checkDeathsQuiet();
+  if (!alive().length) { gameOver('The landing was not survivable. Your lander is now a crater that future colonists will name after you.', 'Crashed on Mars', 'the landing'); return; }
+  const lost = G.crew.filter(c => !c.alive && c.diedOn === 'landing');
+  render(`
+  <div class="stack">
+    <span class="label">Touchdown &middot; Day ${G.day}</span>
+    <h2>${out === 'perfect' ? 'The Eagle has nothing on you' : out === 'good' ? 'Wheels down on Mars' : out === 'rough' ? 'Down, a little bent' : 'You are on Mars, mostly in one piece'}</h2>
+    <p class="${cls}">${msg}</p>
+    ${lost.length ? `<p class="bad">Lost in the landing: ${lost.map(c => esc(c.name)).join(', ')}.</p>` : ''}
+    <p>The lander will be your shelter until you build a habitat, and its power unit can run one module (8 kW) before you have solar arrays. The second wave of colonists launches in the next window and arrives in <b>${SURFACE_SOLS} sols</b>. Keep everyone alive until then.</p>
+    <div class="row"><button class="btn primary" id="b-next" type="button">Step outside</button></div>
+  </div>`);
+  $('#b-next').onclick = startBase; $('#b-next').focus();
+}
+function checkDeathsQuiet() { for (const p of G.crew) if (p.alive && p.health <= 0) { p.alive = false; p.diedOn = 'landing'; log(`${esc(p.name)} did not survive the landing.`, 'bad'); } }
+
+/* ---------- base ---------- */
+function startBase() {
+  G.phase = 'base';
+  G.base = { sol: 0, mods: { hab: 0, solar: 0, greenhouse: 0, ice: 0, ox: 0 }, storm: 0, picked: [], shelter: false };
+  G.hull = Math.max(G.hull, 20); // the lander becomes the base, its hull becomes base integrity
+  log('First footsteps on Mars. The flag goes up. Then the work starts.', 'good');
+  baseScreen();
+}
+function power() { const b = G.base; const gen = 8 + b.mods.solar * 12 * (b.storm ? 0.3 : 1); const use = 5 * (b.mods.greenhouse + b.mods.ice + b.mods.ox); return { gen, use, eff: use ? Math.min(1, gen / use) : 1 }; }
+function slots() { return alive().length >= 4 ? 2 : 1; }
+function canBuild(k) { const m = MODULES[k]; return G.s.kits >= m.kits && G.s.parts >= m.parts; }
+function baseTasks() {
+  const tasks = Object.entries(MODULES).map(([k, m]) => ({ id: 'build:' + k, name: 'Build ' + m.name.toLowerCase(), desc: `${m.kits} kit${m.kits > 1 ? 's' : ''}${m.parts ? ` + ${m.parts} part` : ''}. ${m.desc}`, ok: canBuild(k) }));
+  tasks.push({ id: 'explore', name: 'Explore with the rover', desc: 'Scout for ice, salvage and anything else out there.', ok: true });
+  tasks.push({ id: 'repair', name: 'Repair the base', desc: `1 parts kit: +${Math.round(25 * (bgIs('eng') ? 1.5 : 1))} integrity.`, ok: G.s.parts > 0 && G.hull < G.hullMax });
+  tasks.push({ id: 'rest', name: 'Rest and recover', desc: 'Everyone recovers health and morale.', ok: true });
+  return tasks;
+}
+function baseScreen() {
+  stopLoops();
+  render(`
+  <div class="stack">
+    <div class="row" style="justify-content:space-between"><h2>Base camp, ${esc(G.leader.split(' ').pop())} Station</h2><span class="small muted" id="b-sol"></span></div>
+    <div class="meter"><i id="sol-bar"></i></div>
+    <div class="modules" id="mods"></div>
+    <div class="journey">
+      <div class="stack" style="gap:8px;min-width:0"><span class="label">Base log</span><div class="log" id="log">${G.log.map(logLine).join('')}</div></div>
+      <div class="stack" style="gap:12px;min-width:0"><span class="label">Supplies</span><dl class="stats" id="stats"></dl><span class="label">Crew</span><div class="crew" id="crew"></div></div>
+    </div>
+    <div class="stack" style="gap:10px"><div class="row" style="justify-content:space-between"><span class="label" id="slot-label"></span>
+      <label class="small muted">Rations <select id="rations">${Object.entries(RATIONS).map(([k, r]) => `<option value="${k}">${r.label}</option>`).join('')}</select></label></div>
+      <div class="tasks" id="tasks"></div>
+      <div class="row"><button class="btn primary" id="b-work" type="button">Work the next 10 sols</button><button class="btn" id="b-treat" type="button">Treat the sick</button></div>
+    </div>
+    <div id="event" hidden></div>
+  </div>`);
+  $('#log').scrollTop = 1e9;
+  $('#rations').value = G.rations;
+  $('#rations').onchange = e => { G.rations = e.target.value; updateBase(); };
+  $('#b-work').onclick = workTurn;
+  $('#b-treat').onclick = treatSick;
+  updateBase();
+}
+function updateBase() {
+  const b = G.base; if (!$('#mods')) return;
+  b.picked = b.picked.filter(id => baseTasks().find(t => t.id === id && t.ok)).slice(0, slots());
+  setClock(`Sol ${b.sol} of ${SURFACE_SOLS}`);
+  $('#b-sol').textContent = `Sol ${b.sol} of ${SURFACE_SOLS} · second wave in ${SURFACE_SOLS - b.sol} sols`;
+  $('#sol-bar').style.width = (b.sol / SURFACE_SOLS * 100) + '%';
+  const pw = power();
+  $('#mods').innerHTML = Object.entries(MODULES).map(([k, m]) => `<div class="mod"><span class="label">${m.name}</span><span class="cnt">${b.mods[k]}</span></div>`).join('') +
+    `<div class="mod"><span class="label">Power${b.storm ? ' &middot; dust storm' : ''}</span><span class="cnt ${pw.eff < 1 ? 'bad' : ''}">${pw.gen.toFixed(0)}/${pw.use} kW</span></div>`;
+  const n = alive().length, r = RATIONS[G.rations].rate;
+  const net = { food: b.mods.greenhouse * 3 * pw.eff - n * r, water: b.mods.ice * 6 * pw.eff - n, o2: b.mods.ox * 6 * pw.eff - n };
+  const cell = (k, label) => { const v = net[k]; const days = v < 0 ? G.s[k] / -v : Infinity; const cls = days < 20 ? 'bad' : days < 50 ? 'warn' : 'good'; return `<dt>${label}</dt><dd>${fmt(G.s[k])} <span class="${cls}">(${v >= 0 ? '+' : ''}${v.toFixed(1)}/sol)</span></dd>`; };
+  $('#stats').innerHTML = `<dt>Integrity</dt><dd>${statusBar(G.hull, G.hullMax)}<span class="small">${Math.max(0, Math.round(G.hull))} / ${G.hullMax}</span></dd>
+    ${cell('food', 'Food')}${cell('water', 'Water')}${cell('o2', 'O₂')}
+    <dt>Hab kits</dt><dd>${G.s.kits}</dd><dt>Parts</dt><dd>${G.s.parts}</dd><dt>Medkits</dt><dd>${G.s.med}</dd><dt>Morale</dt><dd>${statusBar(G.morale, 100)}</dd>`;
+  $('#crew').innerHTML = crewHTML();
+  $('#slot-label').textContent = `Assign work · ${b.picked.length} of ${slots()} job${slots() > 1 ? 's' : ''} chosen${b.mods.hab ? '' : ' · no habitat yet, crew sleeping in the lander'}`;
+  $('#tasks').innerHTML = baseTasks().map(t => `<button type="button" class="task ${b.picked.includes(t.id) ? 'sel' : ''}" data-id="${t.id}" ${t.ok ? '' : 'disabled'} aria-pressed="${b.picked.includes(t.id)}"><b>${t.name}</b><span class="muted">${t.desc}</span></button>`).join('');
+  $$('.task').forEach(el => el.onclick = () => {
+    const id = el.dataset.id, i = b.picked.indexOf(id);
+    if (i >= 0) b.picked.splice(i, 1);
+    else { if (b.picked.length >= slots()) b.picked.shift(); b.picked.push(id); }
+    beep(600, 0.03); updateBase();
+  });
+  $('#b-work').disabled = !b.picked.length;
+  $('#b-treat').disabled = !G.s.med || !alive().some(c => c.sick || c.health < 70);
+}
+function workTurn() {
+  const b = G.base;
+  for (const id of b.picked) {
+    if (id.startsWith('build:')) {
+      const k = id.slice(6), m = MODULES[k];
+      if (!canBuild(k)) continue;
+      G.s.kits -= m.kits; G.s.parts -= m.parts; b.mods[k]++;
+      log(`Built a ${m.name.toLowerCase()}.`, 'good');
+      if (k === 'hab' && b.mods.hab === 1) { G.hullMax += 40; G.hull += 40; log('The crew moves out of the lander. Real beds, real walls, real radiation shielding.', 'good'); }
+    } else if (id === 'repair' && G.s.parts) {
+      G.s.parts--; const a = Math.round(25 * (bgIs('eng') ? 1.5 : 1)); G.hull = Math.min(G.hullMax, G.hull + a); log(`Repairs done. Integrity +${a}.`, 'good');
+    } else if (id === 'rest') {
+      alive().forEach(c => heal(c, 15)); G.morale = clamp(G.morale + 15, 0, 100); log('A quiet stretch. The crew sleeps in and watches the blue sunset.', 'good');
+    } else if (id === 'explore') explore();
+  }
+  b.picked = [];
+  for (let i = 0; i < 10; i++) {
+    b.sol++;
+    const pw = power();
+    G.s.food += b.mods.greenhouse * 3 * pw.eff; G.s.water += b.mods.ice * 6 * pw.eff; G.s.o2 += b.mods.ox * 6 * pw.eff;
+    consumeDay();
+    if (!b.mods.hab) alive().forEach(c => hurt(c, 0.5, 'radiation exposure'));
+    if (G.hull <= 0) { G.s.o2 = Math.max(0, G.s.o2 - 6); alive().forEach(c => hurt(c, 2, 'decompression')); }
+    if (b.storm) b.storm--;
+  }
+  if (G.hull <= 0) log('Base integrity has failed. The habitat is leaking air. Repair it now.', 'bad');
+  if (checkDeaths()) return;
+  if (b.sol >= SURFACE_SOLS) { victory(); return; }
+  if (chance(0.6)) baseEvent(); else updateBase();
+}
+function explore() {
+  const opts = [];
+  if ((G.flags.signal === 'decoded' || G.flags.coords) && !G.flags.mars3) opts.push(3, 3);
+  opts.push(0, 0, 1, 1, 2, 4, 5);
+  const o = pick(opts);
+  if (o === 3) {
+    G.flags.mars3 = true; G.s.parts += 3; G.bonus += 500; G.morale = clamp(G.morale + 25, 0, 100);
+    log('Following the signal, the rover finds a dust-caked cone with a Soviet star: Mars 3, the lander that went silent in 1971 after 14.5 seconds. A dust devil scrubbed its panels and woke its transmitter. You salvage 3 parts kits and the first photo it never got to send. +500 score.', 'good');
+  } else if (o === 0) { const w = ri(40, 90); G.s.water += w; log(`The rover finds buried ice in a crater wall. +${w} crew-days of water.`, 'good'); }
+  else if (o === 1) { const p = ri(1, 2); G.s.parts += p; log(`An iron meteorite the size of a fridge. Machined into ${p} parts kit${p > 1 ? 's' : ''}.`, 'good'); }
+  else if (o === 2) { G.morale = clamp(G.morale + 15, 0, 100); G.bonus += 100; log("You find an old rover's tracks, still crisp after decades. Somebody reads its last message aloud: \"My battery is low and it's getting dark.\" Morale up.", 'good'); }
+  else if (o === 4) { const p = pick(alive()); hurt(p, 20, 'a rover accident'); log(`The rover rolls on a dune slope. ${esc(p.name)} is hurt.`, 'bad'); }
+  else { log('A long drive, a lot of rocks, nothing useful. The views were incredible.', ''); }
+}
+function baseEvent() {
+  const b = G.base, crew = alive(), p = pick(crew);
+  const evs = [
+    () => ({ title: 'Dust storm', text: 'A wall of dust is rolling over the horizon. It will blot out the sun for weeks and cut solar power to a third.', choices: [
+      { label: 'Batten down', fn: () => { b.storm = 20; return 'The sky goes orange, then brown, then black at noon.'; } },
+      { label: 'Clean the panels in the storm (risky, 1 part)', disabled: !G.s.parts, fn: () => { G.s.parts--; b.storm = 8; if (chance(0.3)) { hurt(p, 20, 'exposure in a dust storm'); return `Shorter outage, but ${esc(p.name)} got lost in the dust for an hour and came back hurt.`; } return 'Shorter outage. The crew comes in looking like terracotta statues.'; } },
+    ] }),
+    () => { const d = ri(15, 30); G.hull -= d; return { title: 'Hull breach', text: `A seal fails on the ${b.mods.hab ? 'habitat' : 'lander'}. Integrity &minus;${d}. You can hear the air going.`, choices: [
+      { label: 'Patch it now (1 parts kit)', disabled: !G.s.parts, fn: () => { G.s.parts--; G.hull += d; return 'Sealed in 4 minutes. A new record.'; } },
+      { label: 'Close the bulkhead and lose that section\'s air', fn: () => { G.s.o2 = Math.max(0, G.s.o2 - 25); return 'The bulkhead holds. 25 crew-days of O₂ vented to Mars.'; } },
+    ] }; },
+    () => ({ title: 'Marsquake', text: 'The ground shudders for almost a minute. InSight would have loved this one.', choices: [
+      { label: 'Check the structures', fn: () => { const d = ri(5, 15); G.hull -= d; return `Some cracks. Integrity &minus;${d}.`; } },
+    ] }),
+    () => ({ title: `${esc(p.name)} is sick`, text: `${esc(p.name)} has been coughing for days. Probably perchlorate dust in the airlock.`, choices: [
+      { label: `Use a medkit (${G.s.med} left)`, disabled: !G.s.med, fn: () => { G.s.med--; heal(p, 30 * (bgIs('doc') ? 2 : 1)); p.sick = false; return `${esc(p.name)} is breathing easier.`; } },
+      { label: 'Wait it out', fn: () => { p.sick = true; return `${esc(p.name)} is confined to bed.`; } },
+    ] }),
+    () => b.mods.greenhouse ? ({ title: 'Crop blight', text: 'The potatoes have a white fuzz on them. It is spreading.', choices: [
+      { label: 'Burn the infected trays', fn: () => { G.s.food = Math.max(0, G.s.food - 30); return 'Lost 30 crew-days of food, but the rest of the crop is safe.'; } },
+      { label: 'Try to save them', fn: () => { if (chance(0.5)) return 'A UV lamp and a lot of swearing. It worked.'; b.mods.greenhouse--; return 'The blight takes the whole greenhouse. It will need rebuilding.'; } },
+    ] }) : ({ title: 'Dust devil', text: 'A dust devil a kilometre tall wanders right through camp.', choices: [{ label: 'Watch it go', fn: () => { G.morale = clamp(G.morale + 5, 0, 100); return 'It scours the dust off everything. Strangely beautiful.'; } }] }),
+    () => ({ title: 'Supply pod from Earth', text: 'Mission Control squeezed a small cargo pod onto a science launch. It is coming down 4 km away.', choices: [
+      { label: 'Send the rover to fetch it', fn: () => { const f = ri(40, 80), o = ri(30, 60); G.s.food += f; G.s.o2 += o; G.s.med += 1; return `Inside: ${f} crew-days of food, ${o} of O₂, a medkit and a jar of real coffee.`; } },
+    ] }),
+    () => ({ title: 'Solar particle event', text: 'Another flare. On the surface, the planet blocks half of it. The other half is your problem.', choices: [
+      { label: b.mods.hab ? 'Shelter in the habitat' : 'Shelter in the lander', fn: () => { if (b.mods.hab) return 'The regolith on the habitat roof does its job. Nobody is hurt.'; crew.forEach(c => hurt(c, ri(5, 15), 'radiation sickness')); return 'The lander walls are thin. Everyone takes a dose.'; } },
+    ] }),
+  ];
+  if (G.flags.signal === 'replied' && !G.flags.reply2) evs.push(() => { G.flags.reply2 = true; return { title: 'The signal answers', text: 'At 03:12 the base radio wakes on 928 MHz. Played back, very slowly, is your own voice: "Hello from the crew of the ' + esc(G.ship.name) + '." Then a set of coordinates.', choices: [
+    { label: 'Log them for the next rover trip', fn: () => { G.flags.coords = true; return 'Somebody is going to have to go and look.'; } },
+  ] }; });
+  const ev = pick(evs)();
+  updateBase();
+  showEvent(ev);
+}
+
+/* ---------- endings ---------- */
+function computeScore(won) {
+  const crew = alive();
+  let s = crew.length * 500 + crew.reduce((a, c) => a + c.health, 0) * 4;
+  if (G.base) s += Object.values(G.base.mods).reduce((a, v) => a + v, 0) * 150 + (G.base.sol * 5);
+  s += (G.s.food + G.s.water + G.s.o2) / 10 + G.s.parts * 20 + G.s.med * 10 + (G.cat ? 200 : 0) + G.bonus;
+  if (!won) s = s * 0.25 + G.day * 2;
+  return Math.round(s * G.bg.mult);
+}
+function recordScore(outcome, score) {
+  const list = loadFame();
+  list.push({ name: G.leader, outcome, score });
+  list.sort((a, b) => b.score - a.score);
+  saveFame(list.slice(0, 8));
+}
+function victory() {
+  stopLoops(); setClock(`Sol ${G.base.sol}`);
+  const crew = alive(), score = computeScore(true);
+  recordScore(`Survived · ${crew.length} of ${G.crew.length} crew`, score);
+  beep(523, 0.15); setTimeout(() => beep(659, 0.15), 160); setTimeout(() => beep(784, 0.3), 320);
+  const fallen = G.crew.filter(c => !c.alive);
+  render(`
+  <div class="stack">
+    <span class="label">Sol ${G.base.sol} &middot; Arrival</span>
+    <h2>The second wave has landed</h2>
+    <p>Twelve new colonists climb down from their lander and walk over to ${esc(G.leader.split(' ').pop())} Station. ${crew.map(c => esc(c.name)).join(', ')} ${crew.length > 1 ? 'are' : 'is'} waiting at the airlock${G.cat ? ', with Sputnik the cat supervising' : ''}.</p>
+    <p>You built ${Object.values(G.base.mods).reduce((a, v) => a + v, 0)} modules and kept ${crew.length} of ${G.crew.length} people alive for ${G.day} days in space and ${G.base.sol} sols on Mars.${G.flags.mars3 ? ' The Mars 3 lander is on display in the habitat.' : ''}</p>
+    ${fallen.length ? `<p class="muted">In memory of ${fallen.map(c => `${esc(c.name)} (${esc(c.cause)}, ${esc(c.diedOn)})`).join('; ')}.</p>` : ''}
+    <div class="row" style="align-items:baseline"><span class="score">${fmt(score)}</span><span class="muted small">points &middot; ${G.bg.name} &times;${G.bg.mult}</span></div>
+    <div class="row"><button class="btn primary" id="b-again" type="button">Fly again</button><button class="btn" id="b-fame" type="button">Hall of fame</button></div>
+  </div>`);
+  $('#b-again').onclick = () => { newGame(); backgroundScreen(); };
+  $('#b-fame').onclick = fameScreen;
+}
+function gameOver(text, outcome, cause) {
+  stopLoops(); G.running = false;
+  setClock(G.base ? `Sol ${G.base.sol}` : G.day ? `Mission day ${G.day}` : '');
+  const score = computeScore(false);
+  recordScore(outcome, score);
+  const ldr = G.crew.find(c => c.leader) || { name: G.leader };
+  const why = cause || ldr.cause || 'the void';
+  beep(196, 0.4, 'triangle'); setTimeout(() => beep(147, 0.7, 'triangle'), 420);
+  render(`
+  <div class="stack" style="align-items:center;text-align:center">
+    <div class="tomb"><span class="rip">R.I.P.</span><b>${esc(ldr.name)}</b><span class="muted small">${why === 'the void' ? 'lost to the void' : 'died of ' + esc(why)}</span><span class="small muted">${ldr.diedOn === 'landing' ? `Landing day, Mars` : ldr.diedOn ? `${ldr.diedOn[0].toUpperCase() + ldr.diedOn.slice(1)}${G.base ? ', Mars' : ''}` : G.base ? `Sol ${G.base.sol}, Mars` : `Day ${G.day}, ${(TOTAL_KM * Math.min(1, G.progress)).toFixed(0)} million km from Earth`}</span></div>
+    <p>${text}</p>
+    <div class="row" style="justify-content:center;align-items:baseline"><span class="score">${fmt(score)}</span><span class="muted small">points</span></div>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="b-again" type="button">Try again</button><button class="btn" id="b-title" type="button">Title screen</button></div>
+  </div>`);
+  $('#b-again').onclick = () => { newGame(); backgroundScreen(); };
+  $('#b-title').onclick = titleScreen;
+}
+
+titleScreen();
+</script>
+</body>
+</html>
