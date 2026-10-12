@@ -3,7 +3,7 @@ Where things go.
 
 ## Mars Trail
 
-`mars-trail/index.html` is a browser game in the spirit of *The Oregon Trail*, but the trail goes to Mars. Open the file in any modern browser. There is no build step and nothing to install.
+`mars-trail/index.html` is a browser game in the spirit of *The Oregon Trail*, but the trail goes to Mars. Open the file in any modern browser. There is no build step and nothing to install. It plays with touch on iPad in either orientation; in Safari, Share → Add to Home Screen runs it full screen.
 
 1. **Outfit**: choose a leader (tech billionaire, flight pilot, scientist or plumber), hire up to five specialists (chef, medic, engineer, race car driver, computer nerd, carpenter, botanist, pro gamer), pick a ship and stock the hold. A laser turret is optional.
 2. **Launch control**: read the weather board, call GO or SCRUB, then hit LAUNCH at T-0.

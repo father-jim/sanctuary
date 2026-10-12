@@ -3,6 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mars Trail">
+<meta name="theme-color" content="#110e1d">
 <title>Mars Trail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +32,8 @@
 }
 html, body { height: 100%; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--void); color: var(--phos); font: 15px/1.55 var(--font-body); padding-inline: 16px; }
+body { margin: 0; background: var(--void); color: var(--phos); font: 15px/1.55 var(--font-body); padding-inline: max(16px, env(safe-area-inset-left, 0px)); touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+.cockpit, .mg, canvas, button, .tile { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 #app { max-width: 980px; margin: 0 auto; padding-block: 18px 40px; display: flex; flex-direction: column; gap: 14px; }
 .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
 .logo { font-family: var(--font-display); font-size: 18px; letter-spacing: 0.08em; color: var(--mars); }
@@ -45,10 +51,9 @@ p { margin: 0; max-width: 70ch; }
 .small { font-size: 13px; }
 .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--dim); }
 .btn { font: 600 14px var(--font-body); color: var(--phos); background: transparent; border: 1px solid var(--phos); border-radius: 3px; padding: 9px 14px; cursor: pointer; }
-.btn:hover:not(:disabled) { background: rgba(242,196,109,0.12); }
+@media (hover: hover) { .btn:hover:not(:disabled) { background: rgba(242,196,109,0.12); } .btn.primary:hover:not(:disabled) { background: #ffd88c; } .pick:hover:not(:disabled) { border-color: var(--phos); } }
 .btn:focus-visible, input:focus-visible, select:focus-visible, .pick:focus-visible, .pbtn:focus-visible, .lever:focus-visible, .stick:focus-visible, .tile:focus-visible, .task:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
 .btn.primary { background: var(--phos); color: var(--void); }
-.btn.primary:hover:not(:disabled) { background: #ffd88c; }
 .btn.danger { border-color: var(--mars); color: var(--mars); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn.tiny { padding: 4px 9px; font-size: 13px; }
@@ -56,7 +61,6 @@ input[type=text], select { font: 15px var(--font-body); background: var(--void);
 input[type=text] { width: 100%; box-sizing: border-box; }
 .picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
 .pick { text-align: left; font: inherit; color: inherit; background: var(--void); border: 1px solid var(--line); border-radius: 4px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
-.pick:hover:not(:disabled) { border-color: var(--phos); }
 .pick.sel { border-color: var(--ice); box-shadow: 0 0 0 1px var(--ice); background: #0f1824; }
 .pick:disabled { opacity: 0.4; cursor: not-allowed; }
 .pick .name { font-family: var(--font-display); font-size: 15px; color: var(--phos); }
@@ -105,6 +109,15 @@ input[type=text] { width: 100%; box-sizing: border-box; }
 .light.on.blink { animation: blink 0.9s steps(2, start) infinite; }
 @keyframes blink { 50% { opacity: 0.35; } }
 .console { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "thr nav sys" "thr ctl crew" "log log log"; gap: 10px; background: var(--metal); padding: 12px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; }
+@media (min-width: 1000px) and (max-height: 920px) {
+  #app { padding-block: 10px 24px; gap: 10px; }
+  .window canvas { height: 21vh; }
+  .console { grid-template-columns: 96px minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "thr nav sys crew" "thr ctl log crew"; gap: 8px; padding: 10px; }
+  .lever { height: 170px; } .nav-wrap canvas { height: 118px; } .stick { width: 96px; height: 96px; }
+  .p-log .log { height: 96px; } .pnl { padding: 8px; gap: 6px; }
+  .ctl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .pbtn { padding: 7px 4px 6px; }
+}
+@media (max-width: 999px) and (min-width: 761px) { .touch .window canvas { height: 25vh; } .touch .p-log .log { height: 100px; } }
 @media (max-width: 760px) { .console { grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "thr nav" "ctl ctl" "sys sys" "crew crew" "log log"; } }
 .pnl { background: #14101f; border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0;
   background-image: radial-gradient(circle at 6px 6px, #4a4068 1.6px, transparent 2.2px), radial-gradient(circle at calc(100% - 6px) 6px, #4a4068 1.6px, transparent 2.2px), radial-gradient(circle at 6px calc(100% - 6px), #4a4068 1.6px, transparent 2.2px), radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #4a4068 1.6px, transparent 2.2px); }
@@ -152,13 +165,14 @@ input[type=text] { width: 100%; box-sizing: border-box; }
 
 /* mini-games */
 .mg { display: flex; flex-direction: column; gap: 14px; }
-.cv-wrap { position: relative; }
+.cv-wrap { position: relative; width: 100%; max-width: calc(var(--ar, 1.6) * (100vh - 40px)); max-width: calc(var(--ar, 1.6) * (100svh - 40px)); margin-inline: auto; }
 .cv-wrap canvas { display: block; width: 100%; height: auto; max-width: 100%; background: #07060d; border: 1px solid var(--line); border-radius: 4px; touch-action: none; }
 .cv-hud { position: absolute; top: 8px; left: 10px; right: 10px; display: flex; justify-content: space-between; font-family: var(--font-readout); font-size: 22px; color: var(--ice); pointer-events: none; gap: 10px; flex-wrap: wrap; text-shadow: 0 0 4px #000; }
-.pad-ctrl { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.pad-ctrl .btn { min-width: 64px; min-height: 52px; font-size: 20px; user-select: none; -webkit-user-select: none; touch-action: none; }
-@media (pointer: coarse) { .pad-ctrl { display: flex; } }
-.pad-ctrl.always { display: flex; }
+.pad-ctrl { display: none; position: absolute; left: 10px; right: 10px; bottom: 10px; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+.pad-ctrl .grp { display: flex; gap: 10px; }
+.pad-ctrl .btn { pointer-events: auto; min-width: 72px; min-height: 64px; font-size: 24px; background: rgba(17,14,29,0.6); touch-action: none; border-radius: 10px; }
+.pad-ctrl .btn.on { background: rgba(242,196,109,0.45); }
+.touch .pad-ctrl, .pad-ctrl.always { display: flex; }
 .helper { font-size: 12.5px; color: var(--ok); }
 
 /* circuit puzzle */
@@ -230,7 +244,14 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = n => Math.round(n).toLocaleString('en-US');
 let sceneId = 0; // bumps on every full-screen change so stale animation loops stop
-function render(html, bare = false) { sceneId++; screenEl.classList.toggle('bare', bare); screenEl.innerHTML = html; screenEl.scrollIntoView({ block: 'nearest' }); drawPortraits(); }
+function render(html, bare = false) {
+  sceneId++; screenEl.classList.toggle('bare', bare); screenEl.innerHTML = html; drawPortraits();
+  $$('.cv-wrap').forEach(w => { const c = $('canvas', w); if (c) w.style.setProperty('--ar', (c.width / c.height).toFixed(3)); });
+  window.scrollTo({ top: 0 });
+}
+// bring the play area to the middle of the screen once a mini-game starts (keeps the touch buttons in reach on an iPad)
+function focusPlay() { const w = $('.cv-wrap'); if (w) w.scrollIntoView({ block: 'center', behavior: STILL ? 'auto' : 'smooth' }); }
+if (navigator.maxTouchPoints > 0 || 'ontouchstart' in window) document.documentElement.classList.add('touch');
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const STILL = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -240,12 +261,14 @@ function beep(f = 440, d = 0.08, type = 'square', vol = 0.035) {
   if (!soundOn) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
     const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
     o.type = type; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
     o.start(t); o.stop(t + d + 0.02);
   } catch (e) { /* audio unavailable */ }
 }
+addEventListener('pointerdown', () => { if (!actx && soundOn) beep(1, 0.01, 'sine', 0.0001); }, { once: true });
 $('#b-sound').onclick = () => {
   soundOn = !soundOn;
   $('#b-sound').textContent = soundOn ? 'Sound on' : 'Sound off';
@@ -277,8 +300,9 @@ addEventListener('blur', () => { for (const k in KEYS) KEYS[k] = false; });
 const keyDown = (...ks) => ks.some(k => KEYS[k]);
 function bindHold(el, obj, key) {
   if (!el) return;
-  el.onpointerdown = e => { obj[key] = true; try { el.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); };
-  el.onpointerup = el.onpointercancel = () => { obj[key] = false; };
+  el.onpointerdown = e => { obj[key] = true; el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); };
+  el.onpointerup = el.onpointercancel = el.onlostpointercapture = () => { obj[key] = false; el.classList.remove('on'); };
+  el.oncontextmenu = e => e.preventDefault();
 }
 
 /* ================= data ================= */
@@ -718,14 +742,13 @@ function dodgeGame(o) {
     <h2>${o.title}</h2>
     <p class="small muted">${o.text} Steer with the arrow keys or WASD, or drag on the screen. Each hit costs 8 hull.</p>
     ${tips ? `<p class="small">${tips}</p>` : ''}
-    <div class="cv-wrap"><canvas id="cv" width="640" height="400"></canvas><div class="cv-hud" id="hud"></div></div>
-    ${laser ? '<div class="pad-ctrl always"><button class="btn" id="b-laser" type="button">FIRE</button></div>' : ''}
+    <div class="cv-wrap"><canvas id="cv" width="640" height="400"></canvas><div class="cv-hud" id="hud"></div>${laser ? '<div class="pad-ctrl always"><span class="grp"></span><span class="grp"><button class="btn" id="b-laser" type="button">FIRE</button></span></div>' : ''}</div>
     <div class="row" id="mg-row"><button class="btn primary" id="b-start" type="button">Start</button>${o.auto ? `<button class="btn" id="b-auto" type="button">${o.autoLabel}</button>` : ''}</div>
   </div>`);
   const cv = $('#cv'), ctx = cv.getContext('2d');
   drawSpace(ctx, 640, 400, 0);
   if (o.auto) $('#b-auto').onclick = o.auto;
-  $('#b-start').onclick = () => { $('#b-start').disabled = true; if (o.auto) $('#b-auto').disabled = true; runDodge(cv, ctx, o); };
+  $('#b-start').onclick = () => { $('#b-start').disabled = true; if (o.auto) $('#b-auto').disabled = true; focusPlay(); runDodge(cv, ctx, o); };
   $('#b-start').focus();
 }
 function runDodge(cv, ctx, o) {
@@ -1318,8 +1341,7 @@ function dockingGame() {
     <h2>Soft capture</h2>
     <p class="small muted">Arrow keys or WASD fire the thrusters. There is no friction in space: every push keeps going until you push back. Meet the moving port slower than 3 m/s and inside the green window. RCS propellant is limited. Three bumps and the station waves you off.</p>
     ${pilot ? `<p class="small">${helps('pilot', 'flight computer damps your drift.')}</p>` : ''}
-    <div class="cv-wrap"><canvas id="cv" width="640" height="360"></canvas><div class="cv-hud" id="hud"></div></div>
-    <div class="pad-ctrl"><button class="btn" id="t-l" type="button" aria-label="Thrust back">&#9664;</button><button class="btn" id="t-u" type="button" aria-label="Thrust up">&#9650;</button><button class="btn" id="t-d" type="button" aria-label="Thrust down">&#9660;</button><button class="btn" id="t-r" type="button" aria-label="Thrust forward">&#9654;</button></div>
+    <div class="cv-wrap"><canvas id="cv" width="640" height="360"></canvas><div class="cv-hud" id="hud"></div><div class="pad-ctrl"><span class="grp"><button class="btn" id="t-u" type="button" aria-label="Thrust up">&#9650;</button><button class="btn" id="t-d" type="button" aria-label="Thrust down">&#9660;</button></span><span class="grp"><button class="btn" id="t-l" type="button" aria-label="Thrust back">&#9664;</button><button class="btn" id="t-r" type="button" aria-label="Thrust forward">&#9654;</button></span></div></div>
     <div class="row" id="mg-row"><button class="btn primary" id="b-start" type="button">Begin approach</button><button class="btn" id="b-abort" type="button">Abort and fly past</button></div>
   </div>`);
   const cv = $('#cv'), ctx = cv.getContext('2d'), W = 640, H = 360, TOL = pilot ? 18 : 11, VMAX = 30, PORTX = 548;
@@ -1337,7 +1359,7 @@ function dockingGame() {
     $('#b-next').onclick = ok ? stationScreen : backToCockpit; $('#b-next').focus();
   };
   $('#b-abort').onclick = () => { log('You decided not to dock with the Aldrin Cycler.', 'note'); backToCockpit(); };
-  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; };
+  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; focusPlay(); };
   keyHandler = () => {};
   const portY = () => H / 2 + 70 * Math.sin(t * 0.45);
   loop(dt => {
@@ -1536,7 +1558,7 @@ function cipherGame() {
     <h2>Decode the message</h2>
     <p class="small muted">Each symbol stands for one English letter. Your computer has matched a few. Type a letter next to each remaining symbol to fill in the message, then transmit it back. Wrong answers cost 10 seconds. Transmission window: <b id="ci-time"></b> s.</p>
     <div class="msg glass" id="ci-msg"></div>
-    <div class="keys" id="ci-keys">${keyOrder.map(L => `<label class="key">${gsvg(L, 28)}<input type="text" maxlength="1" data-i="${letters.indexOf(L)}" aria-label="Letter for symbol" ${revealed.has(L) ? `value="${L}" disabled` : ''}></label>`).join('')}</div>
+    <div class="keys" id="ci-keys">${keyOrder.map(L => `<label class="key">${gsvg(L, 28)}<input type="text" maxlength="1" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="next" data-i="${letters.indexOf(L)}" aria-label="Letter for symbol" ${revealed.has(L) ? `value="${L}" disabled` : ''}></label>`).join('')}</div>
     <p class="small" id="ci-msg2"></p>
     <div class="row" id="mg-row"><button class="btn primary" id="b-send" type="button">Transmit reply</button><button class="btn" id="b-give" type="button">Give up</button></div>
   </div>`);
@@ -1607,8 +1629,7 @@ function arriveMars() {
     <p>The heat shield glows, the parachute snaps open at 11 km and is cut away at 1.2 km. The last kilometre is yours: up arrow or W fires the engine, left and right tilt the lander. Touch down on the green pad below 3.5 m/s, nearly upright.</p>
     <p class="small muted">You have ${G.s.fuel.toFixed(1)} propellant pods, about ${Math.round(landingFuel())} seconds of engine time. ${G.s.fuel < 1 ? '<b class="bad">Without propellant this will be an airbag landing.</b>' : ''} Practice is free in the simulator, but each run costs a day of supplies in orbit.${sims ? ` Simulator runs so far: ${sims}.` : ''}</p>
     ${has('pilot') ? `<p class="small">${helps('pilot', 'burns 30% less propellant and can take a 1 m/s harder touchdown.')}</p>` : ''}
-    <div class="cv-wrap"><canvas id="cv" width="640" height="420"></canvas><div class="cv-hud" id="hud"></div></div>
-    <div class="pad-ctrl"><button class="btn" id="t-left" type="button" aria-label="Tilt left">&#9664;</button><button class="btn" id="t-up" type="button" aria-label="Fire engine">&#9650;</button><button class="btn" id="t-right" type="button" aria-label="Tilt right">&#9654;</button></div>
+    <div class="cv-wrap"><canvas id="cv" width="640" height="420"></canvas><div class="cv-hud" id="hud"></div><div class="pad-ctrl"><span class="grp"><button class="btn" id="t-left" type="button" aria-label="Tilt left">&#8634;</button><button class="btn" id="t-right" type="button" aria-label="Tilt right">&#8635;</button></span><span class="grp"><button class="btn" id="t-up" type="button" aria-label="Fire engine">&#9650; FIRE</button></span></div></div>
     <div class="row" id="mg-row"><button class="btn primary" id="b-start" type="button">${G.s.fuel < 1 ? 'Brace for impact' : 'Begin the real descent'}</button><button class="btn" id="b-sim" type="button">Practice in the simulator</button><button class="btn" id="b-auto" type="button">Trust the autopilot</button></div>
   </div>`);
   const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -1619,13 +1640,13 @@ function arriveMars() {
     G.day++; consumeDay(); G.flags.sims = (G.flags.sims || 0) + 1;
     if (checkDeaths()) return;
     $$('#mg-row button').forEach(b => b.disabled = true);
-    runLanding(cv, ctx, makeTerrain(640, 420), true, sim);
+    focusPlay(); runLanding(cv, ctx, makeTerrain(640, 420), true, sim);
   };
   $('#b-sim').onclick = sim;
   $('#b-start').onclick = () => {
     $$('#mg-row button').forEach(b => b.disabled = true);
     if (G.s.fuel < 1) { landingResult('airbag', {}); return; }
-    runLanding(cv, ctx, terrain, false);
+    focusPlay(); runLanding(cv, ctx, terrain, false);
   };
 }
 const landingFuel = () => Math.min(G.s.fuel, 5) * 6 * (has('pilot') ? 1.3 : 1);
@@ -1900,8 +1921,7 @@ function roverGame(done) {
     <h2>Drive to the waypoint</h2>
     <p class="small muted">Right arrow or D is the throttle, left arrow or A brakes. In the air, left and right tilt the rover: land with the wheels matching the slope or it flips. Grab blue ice cores on the way. The battery lasts 45 seconds.</p>
     ${driver ? `<p class="small">${helps('driver', 'faster rover, and she can land jumps at angles that would flip anyone else.')}</p>` : ''}
-    <div class="cv-wrap"><canvas id="cv" width="${W}" height="${H}"></canvas><div class="cv-hud" id="hud"></div></div>
-    <div class="pad-ctrl"><button class="btn" id="t-b" type="button" aria-label="Brake or tilt back">&#9664;</button><button class="btn" id="t-g" type="button" aria-label="Throttle or tilt forward">&#9654;</button></div>
+    <div class="cv-wrap"><canvas id="cv" width="${W}" height="${H}"></canvas><div class="cv-hud" id="hud"></div><div class="pad-ctrl"><span class="grp"><button class="btn" id="t-b" type="button" aria-label="Brake or tilt back">&#9664;</button></span><span class="grp"><button class="btn" id="t-g" type="button" aria-label="Throttle or tilt forward">&#9654;</button></span></div></div>
     <div class="row" id="mg-row"><button class="btn primary" id="b-start" type="button">Start driving</button><button class="btn" id="b-auto" type="button">Send it on autopilot</button></div>
   </div>`);
   const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -1917,7 +1937,7 @@ function roverGame(done) {
   const hold = {}; bindHold($('#t-b'), hold, 'b'); bindHold($('#t-g'), hold, 'g');
   keyHandler = () => {};
   $('#b-auto').onclick = () => done({ auto: true });
-  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; $('#b-auto').disabled = true; };
+  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; $('#b-auto').disabled = true; focusPlay(); };
   const finish = res => {
     over = true; stopLoops();
     const msg = res.crashed ? `Flipped! You keep ${res.ice} of ${got} ice cores.` : res.reached ? `Waypoint reached with ${got} ice core${got !== 1 ? 's' : ''}. Time to look around.` : `Battery dead with ${got} ice core${got !== 1 ? 's' : ''}.`;
@@ -1991,7 +2011,7 @@ function scrubGame(done) {
   cv.onpointerdown = e => { if (!running || over) return; down = true; last = null; wipe(pos(e)); try { cv.setPointerCapture(e.pointerId); } catch (_) {} };
   cv.onpointermove = e => { if (down && running && !over) { wipe(pos(e)); if (Math.random() < 0.15) beep(rand(100, 200), 0.03, 'triangle', 0.01); } };
   cv.onpointerup = cv.onpointercancel = () => { down = false; last = null; };
-  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; };
+  $('#b-start').onclick = () => { running = true; $('#b-start').disabled = true; focusPlay(); };
   const cleaned = () => { const px = d.getImageData(0, 0, W, H).data; let a = 0, n = 0; for (let i = 3; i < px.length; i += 64) { a += px[i]; n++; } return clamp(1 - a / (n * 0.96 * 255), 0, 1); };
   loop(dt => {
     if (running && !over) t += dt;
