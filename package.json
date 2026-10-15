@@ -1,0 +1,20 @@
+{
+  "name": "sanctuary",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Find the services your email is registered with, then remove yourself from them.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "node --test test/",
+    "typecheck": "tsc",
+    "check-probes": "node scripts/check-probes.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.0"
+  }
+}

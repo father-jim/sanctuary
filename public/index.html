@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sanctuary</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <header class="intro">
+      <h1>Sanctuary</h1>
+      <p>Find the services your email is registered with, then remove yourself one by one.</p>
+    </header>
+
+    <form id="scan-form" class="panel" novalidate>
+      <label for="email" class="label">Your email address</label>
+      <div class="row">
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <button id="scan-button" type="submit" class="primary">Scan</button>
+      </div>
+      <label class="check">
+        <input id="owns" type="checkbox">
+        <span>This address is mine. Checking someone else’s email can reveal private information about them.</span>
+      </label>
+      <details id="picker">
+        <summary>Services to check <span id="picker-count"></span></summary>
+        <div class="picker-actions">
+          <button type="button" class="link" data-pick="all">Select all</button>
+          <button type="button" class="link" data-pick="none">Select none</button>
+        </div>
+        <div id="picker-list" class="picker-list"></div>
+      </details>
+      <p id="form-error" class="error" role="alert" hidden></p>
+    </form>
+
+    <section id="results" hidden>
+      <div class="summary">
+        <div id="progress-text" aria-live="polite"></div>
+        <div class="progress"><div id="progress-bar"></div></div>
+      </div>
+
+      <h2 id="found-heading">Registered <span class="count" id="found-count"></span></h2>
+      <p class="hint" id="found-empty" hidden>No accounts found on the services checked.</p>
+      <ul id="found-list" class="cards"></ul>
+
+      <div id="unknown-section" hidden>
+        <h2>Couldn’t check <span class="count" id="unknown-count"></span></h2>
+        <p class="hint">These sites blocked or rate-limited the check. That doesn’t mean you have no account there. Retry later, or open the site and try “forgot password” with your email.</p>
+        <button id="retry-button" type="button" class="secondary">Retry these</button>
+        <ul id="unknown-list" class="rows"></ul>
+      </div>
+
+      <details id="clear-section" hidden>
+        <summary>Not registered <span class="count" id="clear-count"></span></summary>
+        <ul id="clear-list" class="rows"></ul>
+      </details>
+    </section>
+
+    <footer>
+      Runs only on your computer. Checks use each site’s own signup or login lookup, which can break when the site changes.
+    </footer>
+  </main>
+
+  <dialog id="request-dialog">
+    <form method="dialog" class="dialog-body">
+      <h2 id="request-title">Erasure request</h2>
+      <div class="dialog-fields">
+        <label>
+          <span class="label">Law to cite</span>
+          <select id="request-law">
+            <option value="gdpr">GDPR (EU, UK, EEA)</option>
+            <option value="ccpa">CCPA (California)</option>
+            <option value="general">No specific law</option>
+          </select>
+        </label>
+        <label>
+          <span class="label">Your name (optional)</span>
+          <input id="request-name" type="text" autocomplete="name">
+        </label>
+      </div>
+      <label>
+        <span class="label">Subject</span>
+        <input id="request-subject" type="text" readonly>
+      </label>
+      <label>
+        <span class="label">Message</span>
+        <textarea id="request-body" rows="14"></textarea>
+      </label>
+      <p id="request-channel" class="hint"></p>
+      <div class="dialog-actions">
+        <button type="button" id="request-copy" class="secondary">Copy message</button>
+        <a id="request-send" class="button primary" target="_blank" rel="noopener noreferrer"></a>
+        <button value="close" class="link">Close</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="card-template">
+    <li class="card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-name"></h3>
+          <div class="card-meta"></div>
+        </div>
+        <select class="status" aria-label="Removal status">
+          <option value="todo">To do</option>
+          <option value="started">Deletion started</option>
+          <option value="requested">Request sent</option>
+          <option value="removed">Removed</option>
+          <option value="keep">Keeping</option>
+        </select>
+      </div>
+      <p class="card-detail"></p>
+      <p class="card-steps"></p>
+      <p class="card-notes"></p>
+      <p class="card-followup"></p>
+      <div class="card-actions">
+        <a class="button primary delete-link" target="_blank" rel="noopener noreferrer">Open deletion page</a>
+        <button type="button" class="secondary request-button">Write erasure request</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
