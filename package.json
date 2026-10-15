@@ -9,12 +9,14 @@
   },
   "scripts": {
     "start": "node src/server.ts",
-    "test": "node --test test/",
+    "test": "node --test",
     "typecheck": "tsc",
-    "check-probes": "node scripts/check-probes.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "imapflow": "^1.0.192"
   }
 }

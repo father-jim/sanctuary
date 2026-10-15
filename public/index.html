@@ -11,55 +11,80 @@
   <main>
     <header class="intro">
       <h1>Sanctuary</h1>
-      <p>Find the services your email is registered with, then remove yourself one by one.</p>
+      <p>Find the services your email is tied to, then remove yourself one by one.</p>
     </header>
 
-    <form id="scan-form" class="panel" novalidate>
-      <label for="email" class="label">Your email address</label>
-      <div class="row">
-        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-        <button id="scan-button" type="submit" class="primary">Scan</button>
-      </div>
-      <label class="check">
-        <input id="owns" type="checkbox">
-        <span>This address is mine. Checking someone else’s email can reveal private information about them.</span>
-      </label>
-      <details id="picker">
-        <summary>Services to check <span id="picker-count"></span></summary>
-        <div class="picker-actions">
-          <button type="button" class="link" data-pick="all">Select all</button>
-          <button type="button" class="link" data-pick="none">Select none</button>
+    <div class="tabs" role="tablist">
+      <button id="tab-inbox" class="tab" role="tab" aria-selected="true" aria-controls="panel-inbox">Scan my inbox</button>
+      <button id="tab-list" class="tab" role="tab" aria-selected="false" aria-controls="panel-list">Pick from a list</button>
+    </div>
+
+    <section id="panel-inbox" class="panel" role="tabpanel" aria-labelledby="tab-inbox">
+      <p class="lead">Connect your mailbox read-only. Sanctuary reads only who sent you mail — never the contents — and matches senders to services you can leave. Nothing leaves your computer.</p>
+      <form id="inbox-form" novalidate>
+        <label class="label" for="inbox-email">Email address</label>
+        <input id="inbox-email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+        <label class="label" for="inbox-password">Password or app password</label>
+        <input id="inbox-password" type="password" autocomplete="off" placeholder="app password" required>
+        <p id="provider-hint" class="hint" hidden></p>
+
+        <details id="server-details">
+          <summary>Mail server settings</summary>
+          <div class="server-grid">
+            <label>IMAP host <input id="inbox-host" type="text" placeholder="imap.example.com"></label>
+            <label>Port <input id="inbox-port" type="number" value="993"></label>
+          </div>
+          <p class="hint">Leave blank to detect automatically for common providers.</p>
+        </details>
+
+        <label class="check">
+          <input id="inbox-owns" type="checkbox">
+          <span>This mailbox is mine.</span>
+        </label>
+        <div class="row">
+          <button id="inbox-button" type="submit" class="primary">Scan inbox</button>
+          <button id="inbox-cancel" type="button" class="secondary" hidden>Stop</button>
         </div>
-        <div id="picker-list" class="picker-list"></div>
-      </details>
-      <p id="form-error" class="error" role="alert" hidden></p>
-    </form>
+        <p id="inbox-error" class="error" role="alert" hidden></p>
+      </form>
+      <p class="fineprint">Most providers need an <strong>app password</strong>, not your normal one. Sanctuary never stores it; it is used once for this scan and discarded.</p>
+    </section>
+
+    <section id="panel-list" class="panel" role="tabpanel" aria-labelledby="tab-list" hidden>
+      <p class="lead">Don’t want to connect your mailbox? Tick the services you know you use and work through removing yourself.</p>
+      <label class="label" for="list-email">Your email (used to fill in erasure requests)</label>
+      <input id="list-email" type="email" autocomplete="email" placeholder="you@example.com">
+      <div class="picker-actions">
+        <button type="button" class="link" data-pick="all">Select all</button>
+        <button type="button" class="link" data-pick="none">Select none</button>
+      </div>
+      <div id="picker-list" class="picker-list"></div>
+      <button id="list-button" type="button" class="primary">Show selected</button>
+    </section>
 
     <section id="results" hidden>
-      <div class="summary">
+      <div id="progress" class="summary" hidden>
         <div id="progress-text" aria-live="polite"></div>
         <div class="progress"><div id="progress-bar"></div></div>
       </div>
 
-      <h2 id="found-heading">Registered <span class="count" id="found-count"></span></h2>
-      <p class="hint" id="found-empty" hidden>No accounts found on the services checked.</p>
+      <div class="results-head">
+        <h2 id="found-heading">Accounts to review <span class="count" id="found-count"></span></h2>
+        <button id="export-button" type="button" class="link" hidden>Export checklist</button>
+      </div>
+      <p class="hint" id="found-empty" hidden>Nothing matched yet.</p>
       <ul id="found-list" class="cards"></ul>
 
-      <div id="unknown-section" hidden>
-        <h2>Couldn’t check <span class="count" id="unknown-count"></span></h2>
-        <p class="hint">These sites blocked or rate-limited the check. That doesn’t mean you have no account there. Retry later, or open the site and try “forgot password” with your email.</p>
-        <button id="retry-button" type="button" class="secondary">Retry these</button>
-        <ul id="unknown-list" class="rows"></ul>
-      </div>
-
-      <details id="clear-section" hidden>
-        <summary>Not registered <span class="count" id="clear-count"></span></summary>
-        <ul id="clear-list" class="rows"></ul>
+      <details id="others-section" hidden>
+        <summary>Other senders <span class="count" id="others-count"></span></summary>
+        <p class="hint">Sanctuary doesn’t have removal steps for these yet. Each links to a search for how to delete the account, and you can still draft an erasure request.</p>
+        <ul id="others-list" class="rows"></ul>
       </details>
     </section>
 
     <footer>
-      Runs only on your computer. Checks use each site’s own signup or login lookup, which can break when the site changes.
+      Runs only on your computer. Sender matching and removal links can go out of date as services change.
     </footer>
   </main>
 
@@ -91,7 +116,7 @@
       <p id="request-channel" class="hint"></p>
       <div class="dialog-actions">
         <button type="button" id="request-copy" class="secondary">Copy message</button>
-        <a id="request-send" class="button primary" target="_blank" rel="noopener noreferrer"></a>
+        <a id="request-send" class="button primary" target="_blank" rel="noopener noreferrer">Open email</a>
         <button value="close" class="link">Close</button>
       </div>
     </form>
@@ -115,10 +140,22 @@
       <p class="card-detail"></p>
       <p class="card-steps"></p>
       <p class="card-notes"></p>
-      <p class="card-followup"></p>
       <div class="card-actions">
         <a class="button primary delete-link" target="_blank" rel="noopener noreferrer">Open deletion page</a>
         <button type="button" class="secondary request-button">Write erasure request</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="other-template">
+    <li class="row">
+      <div class="row-main">
+        <span class="row-name"></span>
+        <span class="row-meta"></span>
+      </div>
+      <div class="row-actions">
+        <a class="link search-link" target="_blank" rel="noopener noreferrer">How to delete</a>
+        <button type="button" class="link request-button">Erasure request</button>
       </div>
     </li>
   </template>
